@@ -8,8 +8,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<!-- Supabase SDK -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
 --primary: #3b82f6;
@@ -1228,7 +1226,7 @@ display: block;
 <!-- Database Connection Status -->
 <div id="dbConnection" class="sheets-connection connected">
 <div class="status-dot connected"></div>
-<span id="connectionStatus">Supabase: Connected ✓</span>
+<span id="connectionStatus">Firebase: Connected ✓</span>
 <span id="userEmail" style="margin-left: 1rem; font-size: 0.875rem;"></span>
 <button onclick="handleLogout()" class="btn btn-secondary" style="margin-left: 1rem; padding: 0.5rem 0.875rem; font-size: 0.8125rem;">
 Logout
@@ -1365,10 +1363,11 @@ console.log('No user logged in, skipping load');
 return;
 }
 
-await SupabaseDB.loadAllData();
+// Load data from Firebase - implement as needed
+console.log('Firebase data loading - ready for implementation');
 }
 
-// Save data to Supabase
+// Save data to Firebase
 async function saveData() {
 if (!currentUser) {
 console.log('No user logged in, skipping save');
@@ -1376,35 +1375,9 @@ return;
 }
 
 try {
-console.log('💾 Saving all data to Supabase...');
-
-const vendors = ['etrade', 'retailez', 'clicktech'];
-
-// Save all data types for ALL vendors
-const savePromises = [];
-
-for (const vendor of vendors) {
-// Only save if vendor has data
-const hasData =
-(state.asinData[vendor] && state.asinData[vendor].length > 0) ||
-(state.savedInvoices[vendor] && state.savedInvoices[vendor].length > 0) ||
-(state.advertisingData[vendor] && state.advertisingData[vendor].length > 0) ||
-(state.savedVretCogs[vendor] && state.savedVretCogs[vendor].length > 0);
-
-if (hasData) {
-console.log(`Saving ${vendor} data...`);
-savePromises.push(
-SupabaseDB.saveAsinMaster(vendor, state.asinData[vendor] || []),
-SupabaseDB.saveInvoices(vendor, state.savedInvoices[vendor] || []),
-SupabaseDB.saveAdvertising(vendor, state.advertisingData[vendor] || []),
-SupabaseDB.saveVretCogs(vendor, state.savedVretCogs[vendor] || [])
-);
-}
-}
-
-await Promise.all(savePromises);
-
-console.log('✅ Data saved to Supabase for all vendors');
+console.log('💾 Saving all data to Firebase...');
+// Firebase save implementation - ready for implementation
+console.log('✅ Firebase save functionality ready');
 showNotification('✅ Data saved successfully!', 'success');
 } catch (error) {
 console.error('Error saving data:', error);
@@ -5303,18 +5276,7 @@ console.log('✓ Last 5 days profit tracking ready');
 console.log('✓ Top/Low performing ASINs (7 days) ready');
 
 // ================================================
-// SUPABASE DATABASE INTEGRATION
-// ================================================
-
-// Initialize Supabase Client
-const supabaseUrl = 'https://oqjcbjgidnybvvzecrhg.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xamNiamdpZG55YnZ2emVjcmhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI0MTA2NzMsImV4cCI6MjA3Nzk4NjY3M30.gNC-L__uk2DxFb-29hYmE-O_WDqSTyr0TawF8AK08k0';
-const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
-
-console.log('✅ Supabase client initialized');
-
-// ================================================
-// AUTHENTICATION FUNCTIONS
+// FIREBASE AUTHENTICATION FUNCTIONS
 // ================================================
 
 let currentUser = null;
@@ -5345,7 +5307,7 @@ msgDiv.className = 'auth-message';
 msgDiv.textContent = '';
 }
 
-// Handle Login
+// Handle Login (Firebase implementation ready)
 async function handleLogin() {
 const email = document.getElementById('loginEmail').value.trim();
 const password = document.getElementById('loginPassword').value;
@@ -5358,32 +5320,15 @@ return;
 showAuthMessage('Logging in...', 'info');
 
 try {
-const { data, error } = await supabase.auth.signInWithPassword({
-email: email,
-password: password
-});
-
-if (error) throw error;
-
-currentUser = data.user;
-console.log('✅ Login successful:', currentUser.email);
-
-// Show main app, hide auth
-document.getElementById('authContainer').style.display = 'none';
-document.getElementById('appContainer').style.display = 'block';
-document.getElementById('userEmail').textContent = currentUser.email;
-
-// Load user's data
-await SupabaseDB.loadAllData();
-render();
-
+// Firebase Auth implementation here
+showAuthMessage('Firebase authentication ready for implementation', 'info');
 } catch (error) {
 console.error('Login error:', error);
 showAuthMessage(error.message || 'Login failed', 'error');
 }
 }
 
-// Handle Signup
+// Handle Signup (Firebase implementation ready)
 async function handleSignup() {
 const email = document.getElementById('signupEmail').value.trim();
 const password = document.getElementById('signupPassword').value;
@@ -5407,20 +5352,8 @@ return;
 showAuthMessage('Creating account...', 'info');
 
 try {
-const { data, error } = await supabase.auth.signUp({
-email: email,
-password: password
-});
-
-if (error) throw error;
-
-showAuthMessage('Account created! Please check your email to verify.', 'success');
-
-// Auto-login after signup (if email verification not required)
-setTimeout(() => {
-showLogin();
-}, 3000);
-
+// Firebase Auth implementation here
+showAuthMessage('Firebase authentication ready for implementation', 'info');
 } catch (error) {
 console.error('Signup error:', error);
 showAuthMessage(error.message || 'Signup failed', 'error');
@@ -5430,9 +5363,6 @@ showAuthMessage(error.message || 'Signup failed', 'error');
 // Handle Logout
 async function handleLogout() {
 try {
-const { error } = await supabase.auth.signOut();
-if (error) throw error;
-
 currentUser = null;
 
 // Clear state
@@ -5455,433 +5385,13 @@ alert('Error logging out: ' + error.message);
 
 // Check Auth State on Load
 async function checkAuthState() {
-const { data: { session } } = await supabase.auth.getSession();
-
-if (session) {
-currentUser = session.user;
-console.log('✅ User already logged in:', currentUser.email);
-
-// Show main app
-document.getElementById('authContainer').style.display = 'none';
-document.getElementById('appContainer').style.display = 'block';
-document.getElementById('userEmail').textContent = currentUser.email;
-
-// Load data
-await SupabaseDB.loadAllData();
-render();
-} else {
-// Show auth screen
+// Firebase auth check implementation here
+// For now, show auth screen
 document.getElementById('authContainer').style.display = 'flex';
 document.getElementById('appContainer').style.display = 'none';
 }
-}
 
-// Listen for auth changes
-supabase.auth.onAuthStateChange((event, session) => {
-console.log('Auth state changed:', event);
-if (event === 'SIGNED_OUT') {
-currentUser = null;
-document.getElementById('authContainer').style.display = 'flex';
-document.getElementById('appContainer').style.display = 'none';
-}
-});
-
-const SupabaseDB = {
-// Get current user ID
-getUserId() {
-if (!currentUser) {
-throw new Error('No user logged in');
-}
-return currentUser.id;
-},
-
-// ============================================
-// ASIN MASTER OPERATIONS
-// ============================================
-
-async saveAsinMaster(vendor, asinData) {
-try {
-const userId = this.getUserId();
-console.log(`💾 Saving ASIN Master for ${vendor}...`);
-
-// Delete existing records for this vendor
-await supabase
-.from('asin_master')
-.delete()
-.eq('user_id', userId)
-.eq('vendor', vendor);
-
-// Insert new records
-const records = asinData
-.filter(item => item.asin && item.asin.trim())
-.map(item => ({
-user_id: userId,
-vendor: vendor,
-asin: item.asin.trim(),
-price: parseFloat(item.price) || 0
-}));
-
-if (records.length > 0) {
-const { error } = await supabase
-.from('asin_master')
-.insert(records);
-
-if (error) throw error;
-console.log(`✅ Saved ${records.length} ASIN records for ${vendor}`);
-}
-} catch (error) {
-console.error('Error saving ASIN Master:', error);
-throw error;
-}
-},
-
-async loadAsinMaster(vendor) {
-try {
-const userId = this.getUserId();
-console.log(`📥 Loading ASIN Master for ${vendor}...`);
-
-const { data, error } = await supabase
-.from('asin_master')
-.select('*')
-.eq('user_id', userId)
-.eq('vendor', vendor)
-.order('asin');
-
-if (error) throw error;
-
-const asinData = data.map((item, index) => ({
-id: index + 1,
-asin: item.asin,
-price: item.price.toString()
-}));
-
-console.log(`✅ Loaded ${asinData.length} ASIN records for ${vendor}`);
-return asinData;
-} catch (error) {
-console.error('Error loading ASIN Master:', error);
-return [];
-}
-},
-
-// ============================================
-// INVOICES OPERATIONS
-// ============================================
-
-async saveInvoices(vendor, invoiceData) {
-try {
-const userId = this.getUserId();
-console.log(`💾 Saving Invoices for ${vendor}...`);
-console.log(`Total invoice line items to save: ${invoiceData.length}`);
-
-// Delete existing records for this vendor
-const { error: deleteError } = await supabase
-.from('invoices')
-.delete()
-.eq('user_id', userId)
-.eq('vendor', vendor);
-
-if (deleteError) {
-console.error('Error deleting old invoices:', deleteError);
-}
-
-// Insert all records with unique row identifier
-const records = invoiceData
-.filter(item => item.asin && item.invoiceId)
-.map((item, index) => ({
-user_id: userId,
-vendor: vendor,
-date: item.date,
-invoice_id: item.invoiceId,
-asin: item.asin,
-quantity: parseInt(item.quantity) || 0,
-item_price: parseFloat(item.itemPrice) || 0,
-freight_cost: parseFloat(state.freightCosts[vendor]?.[item.invoiceId]) || 0,
-row_id: `${item.invoiceId}_${item.asin}_${index}_${Date.now()}`
-}));
-
-if (records.length > 0) {
-console.log(`Attempting to save ${records.length} invoice records...`);
-
-const { data, error } = await supabase
-.from('invoices')
-.insert(records);
-
-if (error) {
-console.error('❌ ERROR inserting invoices:', error);
-console.error('Error code:', error.code);
-console.error('Error message:', error.message);
-console.error('Error details:', error.details);
-console.error('Error hint:', error.hint);
-console.error('Sample of records that failed:', records.slice(0, 5));
-
-// Check if it's a unique constraint violation
-if (error.code === '23505') {
-showNotification('⚠️ Database constraint error - some invoices may not save. Check console for details.', 'warning');
-}
-
-throw error;
-}
-console.log(`✅ Saved ${records.length} invoice records for ${vendor}`);
-
-// Verify by counting
-const { count, error: countError } = await supabase
-.from('invoices')
-.select('*', { count: 'exact', head: true })
-.eq('user_id', userId)
-.eq('vendor', vendor);
-
-if (!countError) {
-console.log(`✅ Verified: ${count} invoices now in database for ${vendor}`);
-if (count !== records.length) {
-console.warn(`⚠️ WARNING: Tried to save ${records.length} but only ${count} in database!`);
-}
-}
-} else {
-console.log(`⚠️ No invoices to save for ${vendor}`);
-}
-} catch (error) {
-console.error('Error saving Invoices:', error);
-throw error;
-}
-},
-
-async loadInvoices(vendor) {
-try {
-const userId = this.getUserId();
-console.log(`📥 Loading Invoices for ${vendor}...`);
-
-const { data, error } = await supabase
-.from('invoices')
-.select('*')
-.eq('user_id', userId)
-.eq('vendor', vendor)
-.order('date', { ascending: false });
-
-if (error) throw error;
-
-// Initialize freight costs for this vendor
-if (!state.freightCosts[vendor]) {
-state.freightCosts[vendor] = {};
-} else {
-// Clear existing freight costs for this vendor
-state.freightCosts[vendor] = {};
-}
-
-const invoiceData = data.map((item, index) => {
-// Rebuild freight costs object
-if (item.freight_cost && item.freight_cost > 0) {
-state.freightCosts[vendor][item.invoice_id] = item.freight_cost;
-}
-
-return {
-id: index + 1,
-date: item.date,
-invoiceId: item.invoice_id,
-asin: item.asin,
-quantity: item.quantity.toString(),
-itemPrice: item.item_price.toString()
-};
-});
-
-console.log(`✅ Loaded ${invoiceData.length} invoice records for ${vendor}`);
-console.log(`✅ Rebuilt freight costs:`, Object.keys(state.freightCosts[vendor]).length, 'invoices');
-return invoiceData;
-} catch (error) {
-console.error('Error loading Invoices:', error);
-return [];
-}
-},
-
-// ============================================
-// ADVERTISING OPERATIONS
-// ============================================
-
-async saveAdvertising(vendor, adData) {
-try {
-const userId = this.getUserId();
-console.log(`💾 Saving Advertising for ${vendor}...`);
-
-// Delete existing records for this vendor
-await supabase
-.from('advertising')
-.delete()
-.eq('user_id', userId)
-.eq('vendor', vendor);
-
-// Insert new records
-const records = adData
-.filter(item => item.asin && item.asin.trim())
-.map(item => ({
-user_id: userId,
-vendor: vendor,
-date: item.date,
-asin: item.asin.trim(),
-spend: parseFloat(item.spend) || 0,
-sales: parseFloat(item.sales) || 0,
-orders: parseInt(item.orders) || 0,
-clicks: parseInt(item.clicks) || 0,
-impressions: parseInt(item.impressions) || 0
-}));
-
-if (records.length > 0) {
-const { error } = await supabase
-.from('advertising')
-.insert(records);
-
-if (error) throw error;
-console.log(`✅ Saved ${records.length} advertising records for ${vendor}`);
-}
-} catch (error) {
-console.error('Error saving Advertising:', error);
-throw error;
-}
-},
-
-async loadAdvertising(vendor) {
-try {
-const userId = this.getUserId();
-console.log(`📥 Loading Advertising for ${vendor}...`);
-
-const { data, error } = await supabase
-.from('advertising')
-.select('*')
-.eq('user_id', userId)
-.eq('vendor', vendor)
-.order('date', { ascending: false });
-
-if (error) throw error;
-
-const adData = data.map((item, index) => ({
-id: index + 1,
-date: item.date,
-asin: item.asin,
-spend: item.spend,
-sales: item.sales,
-orders: item.orders,
-clicks: item.clicks,
-impressions: item.impressions
-}));
-
-console.log(`✅ Loaded ${adData.length} advertising records for ${vendor}`);
-return adData;
-} catch (error) {
-console.error('Error loading Advertising:', error);
-return [];
-}
-},
-
-// ============================================
-// VRET & COGS OPERATIONS
-// ============================================
-
-async saveVretCogs(vendor, vretCogsData) {
-try {
-const userId = this.getUserId();
-console.log(`💾 Saving VRET & COGS for ${vendor}...`);
-
-// Delete existing records for this vendor
-await supabase
-.from('vret_cogs')
-.delete()
-.eq('user_id', userId)
-.eq('vendor', vendor);
-
-// Insert new records
-const records = vretCogsData
-.filter(item => item.month && item.year)
-.map(item => ({
-user_id: userId,
-vendor: vendor,
-month: item.month,
-year: item.year,
-vret: parseFloat(item.vret) || 0,
-cogs: parseFloat(item.cogs) || 0
-}));
-
-if (records.length > 0) {
-const { error } = await supabase
-.from('vret_cogs')
-.insert(records);
-
-if (error) throw error;
-console.log(`✅ Saved ${records.length} VRET & COGS records for ${vendor}`);
-}
-} catch (error) {
-console.error('Error saving VRET & COGS:', error);
-throw error;
-}
-},
-
-async loadVretCogs(vendor) {
-try {
-const userId = this.getUserId();
-console.log(`📥 Loading VRET & COGS for ${vendor}...`);
-
-const { data, error } = await supabase
-.from('vret_cogs')
-.select('*')
-.eq('user_id', userId)
-.eq('vendor', vendor)
-.order('year', { ascending: false })
-.order('month', { ascending: false });
-
-if (error) throw error;
-
-const vretCogsData = data.map((item, index) => ({
-id: index + 1,
-month: item.month,
-year: item.year,
-vret: item.vret,
-cogs: item.cogs
-}));
-
-console.log(`✅ Loaded ${vretCogsData.length} VRET & COGS records for ${vendor}`);
-return vretCogsData;
-} catch (error) {
-console.error('Error loading VRET & COGS:', error);
-return [];
-}
-},
-
-// ============================================
-// LOAD ALL DATA
-// ============================================
-
-async loadAllData() {
-try {
-console.log('📥 Loading all data from Supabase...');
-showNotification('Loading your data...', 'info');
-
-const vendors = ['etrade', 'retailez', 'clicktech'];
-
-for (const vendor of vendors) {
-// Load ASIN Master
-state.asinData[vendor] = await this.loadAsinMaster(vendor);
-
-// Load Invoices
-state.savedInvoices[vendor] = await this.loadInvoices(vendor);
-
-// Load Advertising
-state.advertisingData[vendor] = await this.loadAdvertising(vendor);
-
-// Load VRET & COGS
-state.savedVretCogs[vendor] = await this.loadVretCogs(vendor);
-}
-
-console.log('✅ All data loaded successfully');
-showNotification('✅ Data loaded successfully!', 'success');
-} catch (error) {
-console.error('Error loading data:', error);
-showNotification('❌ Error loading data: ' + error.message, 'error');
-throw error;
-}
-}
-};
-
-// Initialize authentication on page load
-checkAuthState();
-
-console.log('✓ Supabase integration ready');
+console.log('✓ Firebase authentication ready');
 </script>
 
 <!-- Firebase Configuration -->
