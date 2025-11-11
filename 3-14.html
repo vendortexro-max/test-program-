@@ -5673,14 +5673,41 @@ try {
 const userId = this.getUserId();
 console.log(`📥 Loading Invoices for ${vendor}...`);
 
+// Pagination settings
+const batchSize = 1000;
+let allData = [];
+let from = 0;
+let hasMore = true;
+
+// Load data in batches
+while (hasMore) {
+const to = from + batchSize - 1;
+console.log(`📦 Fetching invoices batch: ${from} to ${to}`);
+
 const { data, error } = await supabase
 .from('invoices')
 .select('*')
 .eq('user_id', userId)
 .eq('vendor', vendor)
-.order('date', { ascending: false });
+.order('date', { ascending: false })
+.range(from, to);
 
 if (error) throw error;
+
+if (data && data.length > 0) {
+allData = allData.concat(data);
+console.log(`✓ Loaded ${data.length} records (Total: ${allData.length})`);
+}
+
+// Check if we got less than batch size (means we reached the end)
+if (!data || data.length < batchSize) {
+hasMore = false;
+} else {
+from += batchSize;
+}
+}
+
+console.log(`✅ Completed loading ${allData.length} invoice records for ${vendor}`);
 
 // Initialize freight costs for this vendor
 if (!state.freightCosts[vendor]) {
@@ -5690,7 +5717,7 @@ state.freightCosts[vendor] = {};
 state.freightCosts[vendor] = {};
 }
 
-const invoiceData = data.map((item, index) => {
+const invoiceData = allData.map((item, index) => {
 // Rebuild freight costs object
 if (item.freight_cost && item.freight_cost > 0) {
 state.freightCosts[vendor][item.invoice_id] = item.freight_cost;
@@ -5706,7 +5733,6 @@ itemPrice: item.item_price.toString()
 };
 });
 
-console.log(`✅ Loaded ${invoiceData.length} invoice records for ${vendor}`);
 console.log(`✅ Rebuilt freight costs:`, Object.keys(state.freightCosts[vendor]).length, 'invoices');
 return invoiceData;
 } catch (error) {
@@ -5765,16 +5791,43 @@ try {
 const userId = this.getUserId();
 console.log(`📥 Loading Advertising for ${vendor}...`);
 
+// Pagination settings
+const batchSize = 1000;
+let allData = [];
+let from = 0;
+let hasMore = true;
+
+// Load data in batches
+while (hasMore) {
+const to = from + batchSize - 1;
+console.log(`📦 Fetching advertising batch: ${from} to ${to}`);
+
 const { data, error } = await supabase
 .from('advertising')
 .select('*')
 .eq('user_id', userId)
 .eq('vendor', vendor)
-.order('date', { ascending: false });
+.order('date', { ascending: false })
+.range(from, to);
 
 if (error) throw error;
 
-const adData = data.map((item, index) => ({
+if (data && data.length > 0) {
+allData = allData.concat(data);
+console.log(`✓ Loaded ${data.length} records (Total: ${allData.length})`);
+}
+
+// Check if we got less than batch size (means we reached the end)
+if (!data || data.length < batchSize) {
+hasMore = false;
+} else {
+from += batchSize;
+}
+}
+
+console.log(`✅ Completed loading ${allData.length} advertising records for ${vendor}`);
+
+const adData = allData.map((item, index) => ({
 id: index + 1,
 date: item.date,
 asin: item.asin,
@@ -5785,7 +5838,6 @@ clicks: item.clicks,
 impressions: item.impressions
 }));
 
-console.log(`✅ Loaded ${adData.length} advertising records for ${vendor}`);
 return adData;
 } catch (error) {
 console.error('Error loading Advertising:', error);
