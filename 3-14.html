@@ -1,0 +1,5888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>P&L Management Software</title>
+<meta name="description" content="Multi-Vendor Business Analytics and Profit & Loss Management System">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<!-- Supabase SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+--primary: #3b82f6;
+--primary-dark: #2563eb;
+--success: #10b981;
+--success-dark: #059669;
+--danger: #ef4444;
+--danger-dark: #dc2626;
+--warning: #f59e0b;
+--purple: #8b5cf6;
+--purple-dark: #7c3aed;
+--gray-50: #f9fafb;
+--gray-100: #f3f4f6;
+--gray-200: #e5e7eb;
+--gray-300: #d1d5db;
+--gray-400: #9ca3af;
+--gray-500: #6b7280;
+--gray-600: #4b5563;
+--gray-700: #374151;
+--gray-800: #1f2937;
+--gray-900: #111827;
+--shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+--shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+--shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+--shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+--shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+--radius: 12px;
+--radius-sm: 8px;
+--radius-lg: 16px;
+}
+
+* {
+margin: 0;
+padding: 0;
+box-sizing: border-box;
+}
+
+body {
+font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+background-attachment: fixed;
+min-height: 100vh;
+color: var(--gray-900);
+line-height: 1.6;
+}
+
+html {
+scroll-behavior: smooth;
+}
+
+* {
+scrollbar-width: thin;
+scrollbar-color: var(--primary) var(--gray-200);
+}
+
+*::-webkit-scrollbar {
+width: 8px;
+height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+background: var(--gray-100);
+}
+
+*::-webkit-scrollbar-thumb {
+background: var(--primary);
+border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+background: var(--primary-dark);
+}
+
+.header {
+background: rgba(255, 255, 255, 0.95);
+backdrop-filter: blur(10px);
+color: var(--gray-900);
+padding: 1.5rem 2rem;
+box-shadow: var(--shadow-lg);
+border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+position: sticky;
+top: 0;
+z-index: 100;
+}
+
+.header-content {
+max-width: 1400px;
+margin: 0 auto;
+display: flex;
+justify-content: space-between;
+align-items: center;
+flex-wrap: wrap;
+gap: 1rem;
+}
+
+.header-title h1 {
+font-size: 1.75rem;
+font-weight: 800;
+margin-bottom: 0.25rem;
+background: linear-gradient(135deg, var(--primary) 0%, var(--purple) 100%);
+-webkit-background-clip: text;
+-webkit-text-fill-color: transparent;
+background-clip: text;
+}
+
+.header-subtitle {
+font-size: 0.875rem;
+color: var(--gray-500);
+font-weight: 500;
+}
+
+.date-override {
+display: flex;
+align-items: center;
+gap: 0.5rem;
+background: white;
+padding: 0.5rem 1rem;
+border-radius: var(--radius-sm);
+font-size: 0.875rem;
+box-shadow: var(--shadow-sm);
+}
+
+.date-override label {
+color: var(--gray-600);
+font-weight: 600;
+font-size: 0.75rem;
+text-transform: uppercase;
+letter-spacing: 0.05em;
+}
+
+.date-override input {
+background: var(--gray-50);
+border: 2px solid var(--gray-200);
+padding: 0.375rem 0.625rem;
+border-radius: var(--radius-sm);
+font-size: 0.8125rem;
+color: var(--gray-900);
+transition: all 0.2s;
+}
+
+.date-override input:focus {
+outline: none;
+border-color: var(--primary);
+box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.date-override button {
+background: var(--primary);
+border: none;
+color: white;
+padding: 0.375rem 0.875rem;
+border-radius: var(--radius-sm);
+cursor: pointer;
+font-size: 0.75rem;
+font-weight: 600;
+transition: all 0.2s;
+}
+
+.date-override button:hover {
+background: var(--primary-dark);
+transform: translateY(-1px);
+}
+
+/* Notification Toast */
+.notification-toast {
+position: fixed;
+top: 24px;
+right: 24px;
+background: white;
+padding: 1.25rem 1.75rem;
+border-radius: var(--radius);
+box-shadow: var(--shadow-xl);
+display: flex;
+align-items: center;
+gap: 0.875rem;
+z-index: 9999;
+animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+max-width: 420px;
+border-left: 4px solid transparent;
+}
+
+@keyframes slideIn {
+from {
+transform: translateX(400px);
+opacity: 0;
+}
+to {
+transform: translateX(0);
+opacity: 1;
+}
+}
+
+.notification-toast.success {
+border-left: 4px solid #16a34a;
+}
+
+.notification-toast.error {
+border-left: 4px solid #dc2626;
+}
+
+.notification-toast.info {
+border-left: 4px solid #2563eb;
+}
+
+/* Search Box Styles */
+.search-box {
+position: relative;
+margin-bottom: 1rem;
+}
+
+.search-box input {
+width: 100%;
+padding: 0.875rem 1rem 0.875rem 2.75rem;
+border: 2px solid var(--gray-200);
+border-radius: var(--radius-sm);
+font-size: 0.875rem;
+transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+background: white;
+}
+
+.search-box input:focus {
+outline: none;
+border-color: var(--primary);
+box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1), var(--shadow-md);
+transform: translateY(-1px);
+}
+
+.search-box input:hover {
+border-color: var(--gray-300);
+}
+
+.search-box::before {
+content: "🔍";
+position: absolute;
+left: 0.75rem;
+top: 50%;
+transform: translateY(-50%);
+font-size: 1rem;
+pointer-events: none;
+}
+
+.filter-info {
+font-size: 0.875rem;
+color: #6b7280;
+margin-top: 0.5rem;
+font-style: italic;
+}
+
+.vendor-selector {
+display: flex;
+gap: 0.5rem;
+flex-wrap: wrap;
+}
+
+.vendor-btn {
+padding: 0.625rem 1.5rem;
+border: 2px solid transparent;
+background: white;
+color: var(--gray-700);
+border-radius: var(--radius-sm);
+cursor: pointer;
+font-size: 0.875rem;
+font-weight: 600;
+transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+box-shadow: var(--shadow-sm);
+}
+
+.vendor-btn:hover {
+transform: translateY(-2px);
+box-shadow: var(--shadow-md);
+color: var(--primary);
+}
+
+.vendor-btn.active {
+background: linear-gradient(135deg, var(--primary) 0%, var(--purple) 100%);
+color: white;
+border-color: transparent;
+box-shadow: var(--shadow-lg);
+}
+
+.container {
+max-width: 1400px;
+margin: 0 auto;
+padding: 2rem;
+background: var(--gray-50);
+min-height: calc(100vh - 100px);
+}
+
+.tabs {
+display: flex;
+gap: 0.5rem;
+flex-wrap: wrap;
+margin-bottom: 2rem;
+background: white;
+padding: 0.5rem;
+border-radius: var(--radius);
+box-shadow: var(--shadow);
+}
+
+.tab-btn {
+padding: 0.75rem 1.5rem;
+background: transparent;
+border: none;
+color: var(--gray-600);
+font-size: 0.875rem;
+font-weight: 600;
+cursor: pointer;
+border-radius: var(--radius-sm);
+transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+position: relative;
+}
+
+.tab-btn:hover {
+background-color: var(--gray-100);
+color: var(--gray-900);
+transform: translateY(-1px);
+}
+
+.tab-btn.active {
+color: white;
+background: linear-gradient(135deg, var(--primary) 0%, var(--purple) 100%);
+box-shadow: var(--shadow-md);
+}
+
+.card {
+background: white;
+border-radius: var(--radius);
+padding: 1.5rem;
+box-shadow: var(--shadow-md);
+margin-bottom: 1.5rem;
+transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+border: 1px solid var(--gray-100);
+}
+
+.card:hover {
+box-shadow: var(--shadow-lg);
+transform: translateY(-2px);
+}
+
+.card-header {
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin-bottom: 1.5rem;
+flex-wrap: wrap;
+gap: 1rem;
+padding-bottom: 1rem;
+border-bottom: 2px solid var(--gray-100);
+}
+
+.card-title {
+font-size: 1.25rem;
+font-weight: 700;
+color: var(--gray-900);
+letter-spacing: -0.025em;
+}
+
+.btn-group {
+display: flex;
+gap: 0.5rem;
+flex-wrap: wrap;
+}
+
+.btn {
+padding: 0.625rem 1.25rem;
+border: none;
+border-radius: var(--radius-sm);
+font-size: 0.875rem;
+font-weight: 600;
+cursor: pointer;
+display: inline-flex;
+align-items: center;
+gap: 0.5rem;
+transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+box-shadow: var(--shadow-sm);
+}
+
+.btn:hover {
+transform: translateY(-2px);
+box-shadow: var(--shadow-md);
+}
+
+.btn:active {
+transform: translateY(0);
+}
+
+.btn-primary {
+background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+color: white;
+}
+
+.btn-primary:hover {
+box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2), var(--shadow-md);
+}
+
+.btn-success {
+background: linear-gradient(135deg, var(--success) 0%, var(--success-dark) 100%);
+color: white;
+}
+
+.btn-success:hover {
+box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2), var(--shadow-md);
+}
+
+.btn-purple {
+background: linear-gradient(135deg, var(--purple) 0%, var(--purple-dark) 100%);
+color: white;
+}
+
+.btn-purple:hover {
+box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2), var(--shadow-md);
+}
+
+.btn-gray {
+background: linear-gradient(135deg, var(--gray-600) 0%, var(--gray-700) 100%);
+color: white;
+}
+
+.btn-gray:hover {
+box-shadow: 0 0 0 3px rgba(75, 85, 99, 0.2), var(--shadow-md);
+}
+
+.btn-red {
+background: linear-gradient(135deg, var(--danger) 0%, var(--danger-dark) 100%);
+color: white;
+}
+
+.btn-red:hover {
+box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2), var(--shadow-md);
+}
+
+table {
+width: 100%;
+border-collapse: separate;
+border-spacing: 0;
+font-size: 0.875rem;
+}
+
+th, td {
+padding: 1rem 0.75rem;
+text-align: left;
+border-bottom: 1px solid var(--gray-200);
+}
+
+th {
+background: linear-gradient(to bottom, var(--gray-50) 0%, var(--gray-100) 100%);
+font-weight: 700;
+color: var(--gray-700);
+text-transform: uppercase;
+font-size: 0.75rem;
+letter-spacing: 0.05em;
+position: sticky;
+top: 0;
+z-index: 10;
+}
+
+tbody tr {
+transition: all 0.2s ease;
+}
+
+tbody tr:hover {
+background-color: var(--gray-50);
+transform: scale(1.01);
+box-shadow: var(--shadow-sm);
+}
+
+thead th:first-child {
+border-top-left-radius: var(--radius-sm);
+}
+
+thead th:last-child {
+border-top-right-radius: var(--radius-sm);
+}
+
+tr:hover {
+background-color: #f9fafb;
+}
+
+input[type="text"],
+input[type="number"],
+input[type="date"],
+select {
+width: 100%;
+padding: 0.5rem;
+border: 1px solid #d1d5db;
+border-radius: 0.375rem;
+font-size: 0.875rem;
+}
+
+input:focus,
+select:focus {
+outline: none;
+border-color: #2563eb;
+ring: 2px solid rgba(37, 99, 235, 0.2);
+}
+
+.hidden {
+display: none !important;
+}
+
+.stat-card {
+background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+border-radius: 0.75rem;
+padding: 1.5rem;
+color: white;
+box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.stat-label {
+font-size: 0.875rem;
+opacity: 0.9;
+margin-bottom: 0.5rem;
+}
+
+.stat-value {
+font-size: 2rem;
+font-weight: 700;
+margin-bottom: 0.25rem;
+}
+
+.stat-subtitle {
+font-size: 0.75rem;
+opacity: 0.8;
+}
+
+.grid {
+display: grid;
+gap: 1.5rem;
+}
+
+.grid-cols-2 {
+grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.grid-cols-3 {
+grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+.grid-cols-4 {
+grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.alert {
+padding: 1rem;
+border-radius: 0.5rem;
+margin-bottom: 1rem;
+border-left: 4px solid;
+}
+
+.alert-warning {
+background-color: #fef3c7;
+border-color: #f59e0b;
+color: #92400e;
+}
+
+.alert-error {
+background-color: #fee2e2;
+border-color: #dc2626;
+color: #7f1d1d;
+}
+
+.alert-success {
+background-color: #d1fae5;
+border-color: #10b981;
+color: #065f46;
+}
+
+.alert-info {
+background-color: #dbeafe;
+border-color: #3b82f6;
+color: #1e40af;
+}
+
+.overflow-x-auto {
+overflow-x: auto;
+border-radius: var(--radius-sm);
+}
+
+.overflow-x-auto::-webkit-scrollbar {
+height: 6px;
+}
+
+.text-center {
+text-align: center;
+}
+
+.text-right {
+text-align: right;
+}
+
+.text-red {
+color: #dc2626;
+}
+
+.text-green {
+color: #16a34a;
+}
+
+.text-blue {
+color: #2563eb;
+}
+
+.text-orange {
+color: #ea580c;
+}
+
+.text-gray {
+color: #6b7280;
+}
+
+.font-semibold {
+font-weight: 600;
+}
+
+.font-bold {
+font-weight: 700;
+}
+
+.badge {
+display: inline-block;
+padding: 0.25rem 0.75rem;
+border-radius: 9999px;
+font-size: 0.75rem;
+font-weight: 600;
+}
+
+.badge-green {
+background-color: #d1fae5;
+color: #065f46;
+}
+
+.badge-yellow {
+background-color: #fef3c7;
+color: #92400e;
+}
+
+.badge-red {
+background-color: #fee2e2;
+color: #7f1d1d;
+}
+
+.badge-blue {
+background-color: #dbeafe;
+color: #1e40af;
+}
+
+.progress-bar {
+width: 100%;
+height: 1.5rem;
+background-color: #e5e7eb;
+border-radius: 9999px;
+overflow: hidden;
+}
+
+.progress-fill {
+height: 100%;
+display: flex;
+align-items: center;
+justify-content: center;
+font-size: 0.75rem;
+font-weight: 600;
+color: white;
+transition: width 0.5s ease;
+}
+
+.bg-green {
+background-color: #22c55e;
+}
+
+.bg-yellow {
+background-color: #eab308;
+}
+
+.bg-red {
+background-color: #ef4444;
+}
+
+.bg-blue {
+background-color: #3b82f6;
+}
+
+.icon-btn {
+background: none;
+border: none;
+cursor: pointer;
+padding: 0.5rem;
+color: #dc2626;
+border-radius: 0.375rem;
+transition: all 0.2s;
+}
+
+.icon-btn:hover {
+background-color: #fee2e2;
+}
+
+.icon-btn:disabled {
+color: #d1d5db;
+cursor: not-allowed;
+}
+
+.icon-btn:disabled:hover {
+background: none;
+}
+
+.empty-state {
+padding: 3rem;
+text-align: center;
+color: #9ca3af;
+}
+
+.empty-state svg {
+width: 6rem;
+height: 6rem;
+margin: 0 auto 1rem;
+}
+
+.mt-2 { margin-top: 0.5rem; }
+.mt-4 { margin-top: 1rem; }
+.mb-2 { margin-bottom: 0.5rem; }
+.mb-4 { margin-bottom: 1rem; }
+.p-4 { padding: 1rem; }
+.px-4 { padding-left: 1rem; padding-right: 1rem; }
+.py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+
+@media (max-width: 768px) {
+.container {
+padding: 1rem;
+}
+
+.header-content {
+flex-direction: column;
+align-items: flex-start;
+}
+
+table {
+font-size: 0.75rem;
+}
+
+th, td {
+padding: 0.5rem;
+}
+
+.btn {
+padding: 0.375rem 0.75rem;
+font-size: 0.75rem;
+}
+}
+
+/* Text utilities */
+.text-right { text-align: right; }
+.text-green { color: var(--success); }
+.text-red { color: var(--danger); }
+.text-orange { color: var(--warning); }
+.text-gray { color: var(--gray-500); }
+.font-semibold { font-weight: 600; }
+.mb-4 { margin-bottom: 1.5rem; }
+.mt-4 { margin-top: 1.5rem; }
+
+/* Enhanced focus visible for accessibility */
+*:focus-visible {
+outline: 2px solid var(--primary);
+outline-offset: 2px;
+}
+
+/* Loading state (optional for future use) */
+@keyframes spin {
+to { transform: rotate(360deg); }
+}
+
+.loading {
+animation: spin 1s linear infinite;
+}
+
+/* Pulse animation for new items */
+@keyframes pulse {
+0%, 100% {
+opacity: 1;
+}
+50% {
+opacity: 0.8;
+}
+}
+
+/* Google Sheets Integration */
+.google-sheets-status {
+display: flex;
+align-items: center;
+gap: 0.5rem;
+background: white;
+padding: 0.5rem 1rem;
+border-radius: var(--radius-sm);
+font-size: 0.875rem;
+box-shadow: var(--shadow-sm);
+cursor: pointer;
+transition: all 0.2s;
+}
+
+.google-sheets-status:hover {
+box-shadow: var(--shadow-md);
+transform: translateY(-1px);
+}
+
+.status-dot {
+width: 8px;
+height: 8px;
+border-radius: 50%;
+animation: pulse 2s infinite;
+}
+
+.status-dot.connected {
+background: var(--success);
+}
+
+.status-dot.disconnected {
+background: var(--gray-400);
+}
+
+.modal-overlay {
+position: fixed;
+top: 0;
+left: 0;
+right: 0;
+bottom: 0;
+background: rgba(0, 0, 0, 0.5);
+backdrop-filter: blur(4px);
+display: flex;
+align-items: center;
+justify-content: center;
+z-index: 1000;
+animation: fadeIn 0.2s ease;
+}
+
+.modal {
+background: white;
+padding: 2rem;
+border-radius: var(--radius-lg);
+max-width: 600px;
+width: 90%;
+max-height: 80vh;
+overflow-y: auto;
+box-shadow: var(--shadow-xl);
+animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideUp {
+from {
+opacity: 0;
+transform: translateY(20px);
+}
+to {
+opacity: 1;
+transform: translateY(0);
+}
+}
+
+.modal-header {
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin-bottom: 1.5rem;
+padding-bottom: 1rem;
+border-bottom: 2px solid var(--gray-100);
+}
+
+.modal-title {
+font-size: 1.5rem;
+font-weight: 700;
+color: var(--gray-900);
+}
+
+.close-btn {
+background: none;
+border: none;
+font-size: 1.5rem;
+color: var(--gray-400);
+cursor: pointer;
+padding: 0.25rem;
+line-height: 1;
+transition: all 0.2s;
+}
+
+.close-btn:hover {
+color: var(--gray-900);
+transform: scale(1.1);
+}
+
+.form-group {
+margin-bottom: 1.5rem;
+}
+
+.form-label {
+display: block;
+font-weight: 600;
+color: var(--gray-700);
+margin-bottom: 0.5rem;
+font-size: 0.875rem;
+}
+
+.form-help {
+font-size: 0.8125rem;
+color: var(--gray-500);
+margin-top: 0.25rem;
+}
+
+.sync-status {
+display: flex;
+align-items: center;
+gap: 0.5rem;
+padding: 0.75rem;
+background: var(--gray-50);
+border-radius: var(--radius-sm);
+font-size: 0.875rem;
+margin-top: 1rem;
+}
+
+/* Google Sheets Integration Styles */
+.sheets-connection {
+position: fixed;
+top: 100px;
+right: 20px;
+z-index: 999;
+background: white;
+padding: 0.875rem 1.25rem;
+border-radius: var(--radius);
+box-shadow: var(--shadow-xl);
+display: flex;
+align-items: center;
+gap: 0.75rem;
+transition: all 0.3s;
+font-size: 0.875rem;
+}
+
+.sheets-connection.connected {
+border-left: 4px solid var(--success);
+}
+
+.sheets-connection.disconnected {
+border-left: 4px solid var(--danger);
+}
+
+.status-dot {
+width: 10px;
+height: 10px;
+border-radius: 50%;
+animation: pulse 2s infinite;
+}
+
+.status-dot.connected {
+background: var(--success);
+}
+
+.status-dot.disconnected {
+background: var(--danger);
+}
+
+@keyframes pulse {
+0%, 100% { opacity: 1; }
+50% { opacity: 0.5; }
+}
+
+.sheets-modal {
+position: fixed;
+top: 0;
+left: 0;
+right: 0;
+bottom: 0;
+background: rgba(0, 0, 0, 0.7);
+display: none;
+align-items: center;
+justify-content: center;
+z-index: 10000;
+padding: 2rem;
+}
+
+.sheets-modal.active {
+display: flex;
+}
+
+.sheets-modal-content {
+background: white;
+border-radius: var(--radius-lg);
+padding: 2rem;
+max-width: 700px;
+width: 100%;
+max-height: 90vh;
+overflow-y: auto;
+}
+
+.integration-card {
+background: var(--gray-50);
+padding: 1.5rem;
+border-radius: var(--radius);
+margin: 1rem 0;
+border-left: 4px solid var(--primary);
+}
+
+.integration-card h3 {
+font-size: 1.125rem;
+margin-bottom: 0.75rem;
+color: var(--gray-900);
+}
+
+.integration-card ol, .integration-card ul {
+margin-left: 1.25rem;
+margin-top: 0.5rem;
+line-height: 1.8;
+}
+
+.integration-card li {
+margin-bottom: 0.5rem;
+}
+
+.code-block {
+background: var(--gray-900);
+color: var(--success);
+padding: 0.75rem 1rem;
+border-radius: var(--radius-sm);
+font-family: 'Courier New', monospace;
+font-size: 0.75rem;
+overflow-x: auto;
+margin: 0.75rem 0;
+}
+
+.sheets-sync-panel {
+background: linear-gradient(135deg, #e0f2fe 0%, #dbeafe 100%);
+padding: 1.5rem;
+border-radius: var(--radius);
+margin: 1.5rem 0;
+border-left: 4px solid var(--primary);
+}
+
+.sync-buttons {
+display: flex;
+gap: 0.75rem;
+flex-wrap: wrap;
+margin-top: 1rem;
+}
+
+.loading-spinner {
+display: inline-block;
+width: 14px;
+height: 14px;
+border: 2px solid rgba(255, 255, 255, 0.3);
+border-top-color: white;
+border-radius: 50%;
+animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+to { transform: rotate(360deg); }
+}
+
+/* Authentication Styles */
+.auth-container {
+position: fixed;
+top: 0;
+left: 0;
+width: 100%;
+height: 100vh;
+background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+display: flex;
+align-items: center;
+justify-content: center;
+z-index: 9999;
+}
+
+.auth-box {
+background: white;
+border-radius: var(--radius);
+padding: 3rem;
+box-shadow: var(--shadow-xl);
+width: 100%;
+max-width: 420px;
+animation: fadeInUp 0.5s ease;
+}
+
+@keyframes fadeInUp {
+from {
+opacity: 0;
+transform: translateY(30px);
+}
+to {
+opacity: 1;
+transform: translateY(0);
+}
+}
+
+.auth-header {
+text-align: center;
+margin-bottom: 2rem;
+}
+
+.auth-header h1 {
+font-size: 2rem;
+font-weight: 800;
+background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+-webkit-background-clip: text;
+-webkit-text-fill-color: transparent;
+margin-bottom: 0.5rem;
+}
+
+.auth-header p {
+color: var(--gray-600);
+font-size: 0.9375rem;
+}
+
+.auth-form h2 {
+font-size: 1.5rem;
+font-weight: 700;
+margin-bottom: 1.5rem;
+color: var(--gray-900);
+text-align: center;
+}
+
+.auth-input {
+width: 100%;
+padding: 0.875rem;
+border: 2px solid var(--gray-200);
+border-radius: var(--radius-sm);
+font-size: 1rem;
+margin-bottom: 1rem;
+transition: border-color 0.2s;
+}
+
+.auth-input:focus {
+outline: none;
+border-color: var(--primary);
+}
+
+.btn-block {
+width: 100%;
+padding: 1rem;
+font-size: 1rem;
+font-weight: 600;
+}
+
+.auth-switch {
+text-align: center;
+margin-top: 1.5rem;
+color: var(--gray-600);
+font-size: 0.9375rem;
+}
+
+.auth-switch a {
+color: var(--primary);
+text-decoration: none;
+font-weight: 600;
+}
+
+.auth-switch a:hover {
+text-decoration: underline;
+}
+
+.auth-message {
+margin-top: 1rem;
+padding: 1rem;
+border-radius: var(--radius-sm);
+font-size: 0.875rem;
+text-align: center;
+display: none;
+}
+
+.auth-message.success {
+background: #d1fae5;
+color: #065f46;
+display: block;
+}
+
+.auth-message.error {
+background: #fee2e2;
+color: #991b1b;
+display: block;
+}
+
+.auth-message.info {
+background: #dbeafe;
+color: #1e40af;
+display: block;
+}
+</style>
+</head>
+<body>
+<!-- Authentication Container (shown when not logged in) -->
+<div id="authContainer" class="auth-container" style="display: none;">
+<div class="auth-box">
+<div class="auth-header">
+<h1>🔐 P&L Management</h1>
+<p>Sign in to access your data</p>
+</div>
+
+<!-- Login Form -->
+<div id="loginForm" class="auth-form">
+<h2>Login</h2>
+<input type="email" id="loginEmail" placeholder="Email" class="auth-input" required>
+<input type="password" id="loginPassword" placeholder="Password" class="auth-input" required>
+<button onclick="handleLogin()" class="btn btn-primary btn-block">Login</button>
+<p class="auth-switch">Don't have an account? <a href="#" onclick="showSignup(); return false;">Sign Up</a></p>
+</div>
+
+<!-- Signup Form -->
+<div id="signupForm" class="auth-form" style="display: none;">
+<h2>Sign Up</h2>
+<input type="email" id="signupEmail" placeholder="Email" class="auth-input" required>
+<input type="password" id="signupPassword" placeholder="Password (min 6 characters)" class="auth-input" required>
+<input type="password" id="signupConfirm" placeholder="Confirm Password" class="auth-input" required>
+<button onclick="handleSignup()" class="btn btn-success btn-block">Create Account</button>
+<p class="auth-switch">Already have an account? <a href="#" onclick="showLogin(); return false;">Login</a></p>
+</div>
+
+<div id="authMessage" class="auth-message"></div>
+</div>
+</div>
+
+<!-- Main App Container (shown when logged in) -->
+<div id="appContainer" style="display: none;">
+<!-- Database Connection Status -->
+<div id="dbConnection" class="sheets-connection connected">
+<div class="status-dot connected"></div>
+<span id="connectionStatus">Supabase: Connected ✓</span>
+<span id="userEmail" style="margin-left: 1rem; font-size: 0.875rem;"></span>
+<button onclick="handleLogout()" class="btn btn-secondary" style="margin-left: 1rem; padding: 0.5rem 0.875rem; font-size: 0.8125rem;">
+Logout
+</button>
+</div>
+
+<div class="header">
+<div class="header-content">
+<div class="header-title">
+<h1>P&L Management Software</h1>
+<p class="header-subtitle">Multi-Vendor Business Analytics</p>
+</div>
+<div class="vendor-selector">
+<button class="vendor-btn active" data-vendor="etrade">E-Trade</button>
+<button class="vendor-btn" data-vendor="retailez">Retailez</button>
+<button class="vendor-btn" data-vendor="clicktech">ClickTech</button>
+</div>
+</div>
+</div>
+
+<div class="container">
+<div class="tabs">
+<button class="tab-btn active" data-tab="dashboard">📊 Dashboard</button>
+<button class="tab-btn" data-tab="monthly-pl">📅 Monthly P&L</button>
+<button class="tab-btn" data-tab="asin-monthly">📦 ASIN Monthly</button>
+<button class="tab-btn" data-tab="asin-master">🏷️ ASIN Master</button>
+<button class="tab-btn" data-tab="df-invoice">📄 DF Invoice</button>
+<button class="tab-btn" data-tab="fc-invoice">🏭 FC Invoice</button>
+<button class="tab-btn" data-tab="vret-cogs">💰 VRET & COGS</button>
+<button class="tab-btn" data-tab="saved-invoices">💾 Saved Invoices</button>
+<button class="tab-btn" data-tab="advertising">📢 Advertising</button>
+<button class="tab-btn" data-tab="roi-analysis">📈 ROI Analysis</button>
+</div>
+
+<!-- Dashboard Tab -->
+<div id="dashboard-tab" class="tab-content">
+<div id="dashboard-content"></div>
+</div>
+
+<!-- Monthly P&L Tab -->
+<div id="monthly-pl-tab" class="tab-content hidden">
+<div id="monthly-pl-content"></div>
+</div>
+
+<!-- ASIN Monthly Analysis Tab -->
+<div id="asin-monthly-tab" class="tab-content hidden">
+<div id="asin-monthly-content"></div>
+</div>
+
+<!-- ASIN Master Tab -->
+<div id="asin-master-tab" class="tab-content hidden">
+<div id="asin-master-content"></div>
+</div>
+
+<!-- DF Invoice Tab -->
+<div id="df-invoice-tab" class="tab-content hidden">
+<div id="df-invoice-content"></div>
+</div>
+
+<!-- FC Invoice Tab -->
+<div id="fc-invoice-tab" class="tab-content hidden">
+<div id="fc-invoice-content"></div>
+</div>
+
+<!-- VRET & COGS Tab -->
+<div id="vret-cogs-tab" class="tab-content hidden">
+<div id="vret-cogs-content"></div>
+</div>
+
+<!-- Saved Invoices Tab -->
+<div id="saved-invoices-tab" class="tab-content hidden">
+<div id="saved-invoices-content"></div>
+</div>
+
+<!-- Advertising Tab -->
+<div id="advertising-tab" class="tab-content hidden">
+<div id="advertising-content"></div>
+</div>
+
+<!-- ROI Analysis Tab -->
+<div id="roi-analysis-tab" class="tab-content hidden">
+<div id="roi-analysis-content"></div>
+</div>
+</div>
+
+<input type="file" id="asin-file-input" accept=".csv" style="display: none;">
+<input type="file" id="invoice-file-input" accept=".csv" style="display: none;">
+<input type="file" id="fc-file-input" accept=".csv" style="display: none;">
+<input type="file" id="advertising-file-input" accept=".csv" style="display: none;">
+<input type="file" id="backup-file-input" accept=".json" style="display: none;">
+
+<script>
+// State Management
+const state = {
+selectedVendor: 'etrade',
+activeTab: 'dashboard',
+asinData: {
+etrade: [{ id: 1, asin: '', price: '' }],
+retailez: [{ id: 1, asin: '', price: '' }],
+clicktech: [{ id: 1, asin: '', price: '' }]
+},
+invoiceData: [{ id: 1, invoiceId: '', asin: '', quantity: '', itemPrice: '', date: '' }],
+fcInvoiceData: [{ id: 1, asin: '', quantity: '', itemPrice: '' }],
+fcInvoiceId: '',
+fcInvoiceDate: '',
+savedInvoices: {
+etrade: [],
+retailez: [],
+clicktech: []
+},
+freightCosts: {
+etrade: {},
+retailez: {},
+clicktech: {}
+},
+vretCogsData: [{ id: 1, month: '', year: '', vret: '', cogs: '' }],
+savedVretCogs: {
+etrade: [],
+retailez: [],
+clicktech: []
+},
+advertisingData: {
+etrade: [],
+retailez: [],
+clicktech: []
+},
+deleteConfirm: null
+};
+
+// Load data from localStorage
+async function loadData() {
+if (!currentUser) {
+console.log('No user logged in, skipping load');
+return;
+}
+
+await SupabaseDB.loadAllData();
+}
+
+// Save data to Supabase
+async function saveData() {
+if (!currentUser) {
+console.log('No user logged in, skipping save');
+return;
+}
+
+try {
+console.log('💾 Saving all data to Supabase...');
+
+const vendors = ['etrade', 'retailez', 'clicktech'];
+
+// Save all data types for ALL vendors
+const savePromises = [];
+
+for (const vendor of vendors) {
+// Only save if vendor has data
+const hasData =
+(state.asinData[vendor] && state.asinData[vendor].length > 0) ||
+(state.savedInvoices[vendor] && state.savedInvoices[vendor].length > 0) ||
+(state.advertisingData[vendor] && state.advertisingData[vendor].length > 0) ||
+(state.savedVretCogs[vendor] && state.savedVretCogs[vendor].length > 0);
+
+if (hasData) {
+console.log(`Saving ${vendor} data...`);
+savePromises.push(
+SupabaseDB.saveAsinMaster(vendor, state.asinData[vendor] || []),
+SupabaseDB.saveInvoices(vendor, state.savedInvoices[vendor] || []),
+SupabaseDB.saveAdvertising(vendor, state.advertisingData[vendor] || []),
+SupabaseDB.saveVretCogs(vendor, state.savedVretCogs[vendor] || [])
+);
+}
+}
+
+await Promise.all(savePromises);
+
+console.log('✅ Data saved to Supabase for all vendors');
+showNotification('✅ Data saved successfully!', 'success');
+} catch (error) {
+console.error('Error saving data:', error);
+showNotification('❌ Error saving: ' + error.message, 'error');
+}
+}
+
+// Helper Functions
+// Parse date string in multiple formats (YYYY-MM-DD, DD-MM-YYYY, etc.)
+function parseDate(dateStr) {
+if (!dateStr) return null;
+
+// Try parsing as-is first (for YYYY-MM-DD format)
+let date = new Date(dateStr);
+if (!isNaN(date.getTime())) {
+return date;
+}
+
+// Try DD-MM-YYYY or DD/MM/YYYY format
+const parts = dateStr.split(/[-/]/);
+if (parts.length === 3) {
+// Check if first part is day (DD-MM-YYYY)
+if (parseInt(parts[0]) > 12) {
+date = new Date(parts[2], parts[1] - 1, parts[0]);
+if (!isNaN(date.getTime())) {
+return date;
+}
+}
+// Try MM-DD-YYYY
+date = new Date(parts[2], parts[0] - 1, parts[1]);
+if (!isNaN(date.getTime())) {
+return date;
+}
+}
+
+console.warn('Could not parse date:', dateStr);
+return null;
+}
+
+function formatCurrency(value) {
+return `₹${parseFloat(value || 0).toFixed(2)}`;
+}
+
+function getAsinCost(asin) {
+const asinMaster = state.asinData[state.selectedVendor].find(item => item.asin === asin);
+return asinMaster ? parseFloat(asinMaster.price) || 0 : 0;
+}
+
+function calculateRowMetrics(item) {
+const qty = parseFloat(item.quantity) || 0;
+const itemPrice = parseFloat(item.itemPrice) || 0;
+const asinCost = getAsinCost(item.asin);
+
+const grossRevenue = qty * itemPrice;
+const totalCost = qty * asinCost;
+const netRevenue = grossRevenue - totalCost;
+const marginPercent = grossRevenue > 0 ? (netRevenue / grossRevenue) * 100 : 0;
+const roi = totalCost > 0 ? (netRevenue / totalCost) * 100 : 0;
+
+return { grossRevenue, totalCost, netRevenue, marginPercent, roi };
+}
+
+// Vendor Selection
+document.querySelectorAll('.vendor-btn').forEach(btn => {
+btn.addEventListener('click', () => {
+document.querySelectorAll('.vendor-btn').forEach(b => b.classList.remove('active'));
+btn.classList.add('active');
+state.selectedVendor = btn.dataset.vendor;
+render();
+});
+});
+
+// Tab Navigation
+document.querySelectorAll('.tab-btn').forEach(btn => {
+btn.addEventListener('click', () => {
+document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+btn.classList.add('active');
+state.activeTab = btn.dataset.tab;
+
+document.querySelectorAll('.tab-content').forEach(content => {
+content.classList.add('hidden');
+});
+document.getElementById(`${state.activeTab}-tab`).classList.remove('hidden');
+
+render();
+});
+});
+
+// ASIN Master Functions
+function renderAsinMaster() {
+const currentData = state.asinData[state.selectedVendor];
+
+// Check for missing prices
+const missingPrices = currentData.filter(item =>
+item.asin && (!item.price || parseFloat(item.price) === 0)
+);
+
+// Check for duplicate ASINs
+const asinCounts = {};
+const duplicateAsins = new Set();
+currentData.forEach(item => {
+if (item.asin && item.asin.trim()) {
+const normalized = item.asin.trim().toUpperCase();
+asinCounts[normalized] = (asinCounts[normalized] || 0) + 1;
+if (asinCounts[normalized] > 1) {
+duplicateAsins.add(normalized);
+}
+}
+});
+
+let html = '';
+
+if (duplicateAsins.size > 0) {
+html += `
+<div class="alert alert-error">
+<h3 class="font-semibold mb-2">⚠️ ${duplicateAsins.size} Duplicate ASIN${duplicateAsins.size > 1 ? 's' : ''} Found</h3>
+<p style="font-size: 0.875rem; margin-bottom: 0.75rem;">Each ASIN must be unique. Please remove or correct the duplicates below:</p>
+<div style="background: white; padding: 0.75rem; border-radius: 0.375rem; max-height: 8rem; overflow-y: auto;">
+${Array.from(duplicateAsins).map(asin => `<span class="badge badge-red" style="margin: 0.25rem;">${asin}</span>`).join('')}
+</div>
+</div>
+`;
+}
+
+if (missingPrices.length > 0) {
+html += `
+<div class="alert alert-error">
+<h3 class="font-semibold mb-2">⚠️ ${missingPrices.length} ASIN${missingPrices.length > 1 ? 's' : ''} Missing Purchase Price</h3>
+<p style="font-size: 0.875rem; margin-bottom: 0.75rem;">The following ASINs have blank or zero purchase cost. This will affect your profit calculations.</p>
+<div style="background: white; padding: 0.75rem; border-radius: 0.375rem; max-height: 8rem; overflow-y: auto;">
+${missingPrices.map(item => `<span class="badge badge-red" style="margin: 0.25rem;">${item.asin}</span>`).join('')}
+</div>
+</div>
+`;
+}
+
+html += `
+<div class="sheets-sync-panel">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+<div>
+<h3 style="margin: 0; font-size: 1rem; font-weight: 700; color: var(--gray-900);">📊 Google Sheets Sync</h3>
+<p style="margin: 0; font-size: 0.8125rem; color: var(--gray-600); margin-top: 0.25rem;">Load or save data to your cloud database</p>
+</div>
+<div id="sheetsStatusBadge" style="padding: 0.5rem 0.875rem; background: var(--gray-200); border-radius: var(--radius-sm); font-size: 0.8125rem; font-weight: 600; color: var(--gray-700);">
+Not Connected
+</div>
+</div>
+<div class="sync-buttons">
+<button class="btn btn-success" onclick="loadFromSheets()" style="font-size: 0.875rem;">
+📥 Load from Sheets
+</button>
+<button class="btn btn-primary" onclick="saveToSheets()" style="font-size: 0.875rem;">
+📤 Save to Sheets
+</button>
+<button class="btn btn-secondary" onclick="testSheetsConnection()" style="font-size: 0.875rem;">
+🔍 Test Connection
+</button>
+<button class="btn btn-gray" onclick="openSheetsSetup()" style="font-size: 0.875rem;">
+⚙️ Setup
+</button>
+</div>
+</div>
+
+<div class="card">
+<div class="card-header">
+<h2 class="card-title">ASIN Master - Price Management</h2>
+<div class="btn-group">
+<button class="btn btn-gray" onclick="downloadTemplate()">
+📥 Template
+</button>
+<button class="btn btn-purple" onclick="document.getElementById('asin-file-input').click()">
+📤 Import CSV
+</button>
+<button class="btn btn-success" onclick="addAsinRow()">
+➕ Add Row
+</button>
+<button class="btn btn-primary" onclick="saveAsinData()">
+💾 Save
+</button>
+</div>
+</div>
+<div class="search-box">
+<input type="text" id="search-asin-master" placeholder="Search by ASIN..."
+onkeyup="filterAsinMaster()" />
+</div>
+<div class="overflow-x-auto">
+<table id="asin-master-table">
+<thead>
+<tr>
+<th style="width: 50px;">#</th>
+<th>ASIN</th>
+<th>Price (₹)</th>
+<th style="width: 80px; text-align: center;">Action</th>
+</tr>
+</thead>
+<tbody>
+${state.asinData[state.selectedVendor].map((item, index) => `
+<tr style="${
+duplicateAsins.has(item.asin.trim().toUpperCase()) ? 'background-color: #fef3c7; border: 2px solid #f59e0b;' :
+!item.price || parseFloat(item.price) === 0 ? 'background-color: #fee2e2;' :
+''
+}">
+<td>${index + 1}</td>
+<td>
+<input type="text" value="${item.asin}"
+onchange="updateAsinRow(${item.id}, 'asin', this.value)"
+placeholder="Enter ASIN">
+</td>
+<td>
+<input type="number" step="0.01" value="${item.price}"
+onchange="updateAsinRow(${item.id}, 'price', this.value)"
+placeholder="0.00"
+style="${!item.price || parseFloat(item.price) === 0 ? 'border-color: #ef4444; background-color: #fee2e2;' : ''}">
+${(!item.price || parseFloat(item.price) === 0) && item.asin ? '<div style="font-size: 0.75rem; color: #dc2626; margin-top: 0.25rem;">⚠️ Price required</div>' : ''}
+</td>
+<td style="text-align: center;">
+<button class="icon-btn" onclick="deleteAsinRow(${item.id})"
+${state.asinData[state.selectedVendor].length === 1 ? 'disabled' : ''}>
+🗑️
+</button>
+</td>
+</tr>
+`).join('')}
+</tbody>
+</table>
+</div>
+<div class="mt-4" style="display: flex; justify-content: space-between; font-size: 0.875rem;">
+<div class="text-gray">Total entries: ${state.asinData[state.selectedVendor].length}</div>
+${missingPrices.length > 0 ?
+`<div class="text-red font-semibold">⚠️ ${missingPrices.length} ASIN${missingPrices.length > 1 ? 's' : ''} missing price</div>` :
+'<div class="text-green font-semibold">✓ All ASINs have prices</div>'
+}
+</div>
+</div>
+`;
+
+document.getElementById('asin-master-content').innerHTML = html;
+
+// Restore search term if it exists
+if (state.searchTerms && state.searchTerms.asinMaster) {
+const searchInput = document.getElementById('search-asin-master');
+if (searchInput) {
+searchInput.value = state.searchTerms.asinMaster;
+filterAsinMaster();
+}
+}
+}
+
+function addAsinRow() {
+const currentData = state.asinData[state.selectedVendor];
+const newId = currentData.length > 0 ? Math.max(...currentData.map(item => item.id)) + 1 : 1;
+currentData.push({ id: newId, asin: '', price: '' });
+render();
+}
+
+function deleteAsinRow(id) {
+const currentData = state.asinData[state.selectedVendor];
+if (currentData.length > 1) {
+state.asinData[state.selectedVendor] = currentData.filter(item => item.id !== id);
+render();
+}
+}
+
+// Check for duplicate ASIN
+function checkDuplicateAsin(asin, excludeId = null) {
+const currentData = state.asinData[state.selectedVendor];
+const normalized = asin.trim().toUpperCase();
+
+if (!normalized) return false; // Empty ASIN is OK
+
+const duplicate = currentData.find(item =>
+item.id !== excludeId &&
+item.asin.trim().toUpperCase() === normalized
+);
+
+return duplicate ? true : false;
+}
+
+function updateAsinRow(id, field, value) {
+// Check for duplicate ASIN
+if (field === 'asin' && value.trim()) {
+if (checkDuplicateAsin(value, id)) {
+showNotification(`⚠️ ASIN "${value}" already exists! Each ASIN must be unique.`, 'error');
+// Revert the change by re-rendering
+render();
+return;
+}
+}
+
+state.asinData[state.selectedVendor] = state.asinData[state.selectedVendor].map(item =>
+item.id === id ? { ...item, [field]: value } : item
+);
+}
+
+function saveAsinData() {
+const validData = state.asinData[state.selectedVendor].filter(item => item.asin.trim() !== '');
+saveData();
+alert(`✓ Saved ${validData.length} ASIN entries for ${state.selectedVendor}!`);
+}
+
+function downloadTemplate() {
+const csvContent = 'ASIN,Price\nB08N5WRWNW,29.99\nB07XQXZXJC,49.99\nB09ABCDEFG,19.99';
+const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+const url = window.URL.createObjectURL(blob);
+const link = document.createElement('a');
+link.href = url;
+link.download = 'asin_master_template.csv';
+link.click();
+window.URL.revokeObjectURL(url);
+}
+
+// File Import Handlers
+document.getElementById('asin-file-input').addEventListener('change', (e) => {
+const file = e.target.files[0];
+if (!file) return;
+
+const reader = new FileReader();
+reader.onload = (event) => {
+try {
+const content = event.target.result;
+const lines = content.split('\n').filter(line => line.trim());
+const startIndex = lines[0].toLowerCase().includes('asin') || lines[0].toLowerCase().includes('price') ? 1 : 0;
+
+const importedData = [];
+let idCounter = 1;
+
+for (let i = startIndex; i < lines.length; i++) {
+const columns = lines[i].split(',').map(col => col.trim().replace(/['"]/g, ''));
+if (columns.length >= 2 && columns[0]) {
+importedData.push({
+id: idCounter++,
+asin: columns[0],
+price: columns[1] || ''
+});
+}
+}
+
+if (importedData.length > 0) {
+// Remove duplicates from imported data
+const uniqueData = [];
+const seenAsins = new Set();
+let duplicateCount = 0;
+
+for (const item of importedData) {
+const normalized = item.asin.trim().toUpperCase();
+if (!seenAsins.has(normalized)) {
+seenAsins.add(normalized);
+uniqueData.push(item);
+} else {
+duplicateCount++;
+}
+}
+
+state.asinData[state.selectedVendor] = uniqueData;
+render();
+
+let message = `✓ Imported ${uniqueData.length} unique ASINs for ${state.selectedVendor}!`;
+if (duplicateCount > 0) {
+message += `\n⚠️ Removed ${duplicateCount} duplicate ASIN(s).`;
+}
+showNotification(message, 'success');
+}
+} catch (error) {
+console.error('Import error:', error);
+alert('Error importing file. Please check the file format.');
+}
+};
+reader.readAsText(file);
+e.target.value = '';
+});
+
+// DF Invoice Functions
+function renderDFInvoice() {
+let html = `
+<div class="card">
+<div class="card-header">
+<h2 class="card-title">DF Invoice Management</h2>
+<div class="btn-group">
+<button class="btn btn-purple" onclick="document.getElementById('invoice-file-input').click()">
+📤 Import CSV
+</button>
+<button class="btn btn-success" onclick="addInvoiceRow()">
+➕ Add Row
+</button>
+<button class="btn btn-primary" onclick="saveInvoiceData()">
+💾 Save Invoice
+</button>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table>
+<thead>
+<tr>
+<th style="width: 40px;">#</th>
+<th>Invoice ID</th>
+<th>ASIN</th>
+<th>Qty</th>
+<th>Item Price</th>
+<th>Date</th>
+<th>ASIN Cost</th>
+<th>Gross Revenue</th>
+<th>Net Revenue</th>
+<th>Margin %</th>
+<th>ROI %</th>
+<th style="width: 60px;">Action</th>
+</tr>
+</thead>
+<tbody>
+${state.invoiceData.map((item, index) => {
+const metrics = calculateRowMetrics(item);
+const asinCost = getAsinCost(item.asin);
+return `
+<tr style="${item.asin && asinCost === 0 ? 'background-color: #fef3c7;' : ''}">
+<td>${index + 1}</td>
+<td>
+<input type="text" value="${item.invoiceId}"
+onchange="updateInvoiceRow(${item.id}, 'invoiceId', this.value)"
+placeholder="Invoice ID" style="width: 120px;">
+</td>
+<td>
+<input type="text" value="${item.asin}"
+onchange="updateInvoiceRow(${item.id}, 'asin', this.value)"
+placeholder="ASIN" style="width: 120px;">
+</td>
+<td>
+<input type="number" value="${item.quantity}"
+onchange="updateInvoiceRow(${item.id}, 'quantity', this.value); renderDFInvoice();"
+placeholder="0" style="width: 80px;">
+</td>
+<td>
+<input type="number" step="0.01" value="${item.itemPrice}"
+onchange="updateInvoiceRow(${item.id}, 'itemPrice', this.value); renderDFInvoice();"
+placeholder="0.00" style="width: 100px;">
+</td>
+<td>
+<input type="date" value="${item.date}"
+onchange="updateInvoiceRow(${item.id}, 'date', this.value)"
+style="width: 150px;">
+</td>
+<td class="text-right">${formatCurrency(asinCost)}</td>
+<td class="text-right">${formatCurrency(metrics.grossRevenue)}</td>
+<td class="text-right ${metrics.netRevenue >= 0 ? 'text-green' : 'text-red'}">${formatCurrency(metrics.netRevenue)}</td>
+<td class="text-right">
+<span class="badge ${metrics.marginPercent >= 20 ? 'badge-green' : metrics.marginPercent >= 10 ? 'badge-blue' : metrics.marginPercent >= 0 ? 'badge-yellow' : 'badge-red'}">
+${metrics.marginPercent.toFixed(1)}%
+</span>
+</td>
+<td class="text-right">
+<span class="badge ${metrics.roi >= 50 ? 'badge-green' : metrics.roi >= 25 ? 'badge-blue' : metrics.roi >= 0 ? 'badge-yellow' : 'badge-red'}">
+${metrics.roi.toFixed(1)}%
+</span>
+</td>
+<td style="text-align: center;">
+<button class="icon-btn" onclick="deleteInvoiceRow(${item.id})"
+${state.invoiceData.length === 1 ? 'disabled' : ''}>
+🗑️
+</button>
+</td>
+</tr>
+`;
+}).join('')}
+</tbody>
+</table>
+</div>
+</div>
+`;
+
+document.getElementById('df-invoice-content').innerHTML = html;
+}
+
+function addInvoiceRow() {
+const newId = state.invoiceData.length > 0 ? Math.max(...state.invoiceData.map(item => item.id)) + 1 : 1;
+state.invoiceData.push({ id: newId, invoiceId: '', asin: '', quantity: '', itemPrice: '', date: '' });
+render();
+}
+
+function deleteInvoiceRow(id) {
+if (state.invoiceData.length > 1) {
+state.invoiceData = state.invoiceData.filter(item => item.id !== id);
+render();
+}
+}
+
+function updateInvoiceRow(id, field, value) {
+state.invoiceData = state.invoiceData.map(item =>
+item.id === id ? { ...item, [field]: value } : item
+);
+}
+
+function saveInvoiceData() {
+const validData = state.invoiceData.filter(item => item.asin.trim() !== '' && item.invoiceId.trim() !== '');
+if (validData.length === 0) {
+alert('⚠ No valid data to save. Please ensure Invoice ID and ASIN are filled.');
+return;
+}
+
+state.savedInvoices[state.selectedVendor].push(...validData);
+state.invoiceData = [{ id: 1, invoiceId: '', asin: '', quantity: '', itemPrice: '', date: '' }];
+saveData();
+render();
+alert(`✓ Saved ${validData.length} invoice items for ${state.selectedVendor}!`);
+}
+
+document.getElementById('invoice-file-input').addEventListener('change', (e) => {
+const file = e.target.files[0];
+if (!file) return;
+
+const reader = new FileReader();
+reader.onload = (event) => {
+try {
+const content = event.target.result;
+const lines = content.split('\n').filter(line => line.trim());
+if (lines.length === 0) return;
+
+const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+const invoiceIdIndex = headers.findIndex(h => h.includes('new invoice id') || h.includes('invoice'));
+const asinIndex = headers.findIndex(h => h === 'asin');
+const qtyIndex = headers.findIndex(h => h === 'quantity' || h === 'qty');
+const priceIndex = headers.findIndex(h => h.includes('item cost') || h.includes('price'));
+const dateIndex = headers.findIndex(h => h.includes('date'));
+
+const importedData = [];
+let idCounter = 1;
+
+for (let i = 1; i < lines.length; i++) {
+const regex = /,(?=(?:(?:[^"]*"){2})*[^"]*$)/;
+const columns = lines[i].split(regex).map(col => col.trim().replace(/^["']|["']$/g, ''));
+
+const invoiceId = invoiceIdIndex !== -1 ? columns[invoiceIdIndex] : '';
+const asin = asinIndex !== -1 ? columns[asinIndex] : '';
+const quantity = qtyIndex !== -1 ? columns[qtyIndex].replace(/,/g, '') : '';
+const itemPrice = priceIndex !== -1 ? columns[priceIndex].replace(/[₹,$,]/g, '').trim() : '';
+
+// Fixed date parsing to handle format: "2 Nov 2025 11:30:03 AM IST"
+let parsedDate = '';
+if (dateIndex !== -1 && columns[dateIndex]) {
+const dateStr = columns[dateIndex].trim();
+
+// Extract date parts: "2 Nov 2025" from "2 Nov 2025 11:30:03 AM IST"
+const dateParts = dateStr.split(/\s+/).filter(p => p.trim() && !p.includes(':') && !['AM', 'PM', 'IST'].includes(p));
+
+if (dateParts.length >= 3) {
+const day = dateParts[0]; // "2"
+const month = dateParts[1]; // "Nov"
+const year = dateParts[2]; // "2025"
+
+// Create proper date string: "Nov 2, 2025"
+const dateString = `${month} ${day}, ${year}`;
+const dateObj = new Date(dateString);
+
+// Validate the date is reasonable (not year 2001 or other weird dates)
+if (!isNaN(dateObj.getTime()) && dateObj.getFullYear() >= 2020 && dateObj.getFullYear() <= 2030) {
+parsedDate = dateObj.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+} else {
+console.warn('Invalid date parsed:', dateString, '→', dateObj);
+}
+}
+}
+
+if (invoiceId && asin && quantity) {
+importedData.push({
+id: idCounter++,
+invoiceId,
+asin,
+quantity,
+itemPrice,
+date: parsedDate
+});
+}
+}
+
+if (importedData.length > 0) {
+state.invoiceData = importedData;
+render();
+alert(`✓ Imported ${importedData.length} invoice items successfully!`);
+}
+} catch (error) {
+console.error('Import error:', error);
+alert('Error importing file. Please check the file format.');
+}
+};
+reader.readAsText(file);
+e.target.value = '';
+});
+
+// FC Invoice Functions
+function renderFCInvoice() {
+let html = `
+<div class="card">
+<div class="card-header">
+<h2 class="card-title">FC Invoice Management</h2>
+<div class="btn-group">
+<button class="btn btn-purple" onclick="document.getElementById('fc-file-input').click()">
+📤 Import CSV
+</button>
+<button class="btn btn-success" onclick="addFcInvoiceRow()">
+➕ Add Row
+</button>
+<button class="btn btn-gray" onclick="exportFcInvoiceToExcel()">
+📥 Export
+</button>
+<button class="btn btn-primary" onclick="saveFcInvoiceData()">
+💾 Save Invoice
+</button>
+</div>
+</div>
+<div class="mb-4" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+<div>
+<label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Invoice ID</label>
+<input type="text" value="${state.fcInvoiceId}"
+onchange="state.fcInvoiceId = this.value"
+placeholder="Enter Invoice/PO ID" style="width: 100%;">
+</div>
+<div>
+<label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Invoice Date</label>
+<input type="date" value="${state.fcInvoiceDate}"
+onchange="state.fcInvoiceDate = this.value"
+style="width: 100%;">
+</div>
+</div>
+<div class="overflow-x-auto">
+<table>
+<thead>
+<tr>
+<th style="width: 40px;">#</th>
+<th>ASIN</th>
+<th>Quantity</th>
+<th>Item Price</th>
+<th>ASIN Cost</th>
+<th>Gross Revenue</th>
+<th>Net Revenue</th>
+<th>Margin %</th>
+<th>ROI %</th>
+<th style="width: 60px;">Action</th>
+</tr>
+</thead>
+<tbody>
+${state.fcInvoiceData.map((item, index) => {
+const metrics = calculateRowMetrics(item);
+const asinCost = getAsinCost(item.asin);
+return `
+<tr>
+<td>${index + 1}</td>
+<td>
+<input type="text" value="${item.asin}"
+onchange="updateFcInvoiceRow(${item.id}, 'asin', this.value)"
+placeholder="ASIN" style="width: 120px;">
+</td>
+<td>
+<input type="number" value="${item.quantity}"
+onchange="updateFcInvoiceRow(${item.id}, 'quantity', this.value); renderFCInvoice();"
+placeholder="0" style="width: 100px;">
+</td>
+<td>
+<input type="number" step="0.01" value="${item.itemPrice}"
+onchange="updateFcInvoiceRow(${item.id}, 'itemPrice', this.value); renderFCInvoice();"
+placeholder="0.00" style="width: 100px;">
+</td>
+<td class="text-right">${formatCurrency(asinCost)}</td>
+<td class="text-right">${formatCurrency(metrics.grossRevenue)}</td>
+<td class="text-right ${metrics.netRevenue >= 0 ? 'text-green' : 'text-red'}">${formatCurrency(metrics.netRevenue)}</td>
+<td class="text-right">
+<span class="badge ${metrics.marginPercent >= 20 ? 'badge-green' : metrics.marginPercent >= 10 ? 'badge-blue' : metrics.marginPercent >= 0 ? 'badge-yellow' : 'badge-red'}">
+${metrics.marginPercent.toFixed(1)}%
+</span>
+</td>
+<td class="text-right">
+<span class="badge ${metrics.roi >= 50 ? 'badge-green' : metrics.roi >= 25 ? 'badge-blue' : metrics.roi >= 0 ? 'badge-yellow' : 'badge-red'}">
+${metrics.roi.toFixed(1)}%
+</span>
+</td>
+<td style="text-align: center;">
+<button class="icon-btn" onclick="deleteFcInvoiceRow(${item.id})"
+${state.fcInvoiceData.length === 1 ? 'disabled' : ''}>
+🗑️
+</button>
+</td>
+</tr>
+`;
+}).join('')}
+</tbody>
+</table>
+</div>
+</div>
+`;
+
+document.getElementById('fc-invoice-content').innerHTML = html;
+}
+
+function addFcInvoiceRow() {
+const newId = state.fcInvoiceData.length > 0 ? Math.max(...state.fcInvoiceData.map(item => item.id)) + 1 : 1;
+state.fcInvoiceData.push({ id: newId, asin: '', quantity: '', itemPrice: '' });
+render();
+}
+
+function deleteFcInvoiceRow(id) {
+if (state.fcInvoiceData.length > 1) {
+state.fcInvoiceData = state.fcInvoiceData.filter(item => item.id !== id);
+render();
+}
+}
+
+function updateFcInvoiceRow(id, field, value) {
+state.fcInvoiceData = state.fcInvoiceData.map(item =>
+item.id === id ? { ...item, [field]: value } : item
+);
+}
+
+function saveFcInvoiceData() {
+if (!state.fcInvoiceId.trim()) {
+alert('⚠ Please enter an Invoice ID before saving.');
+return;
+}
+
+const validData = state.fcInvoiceData.filter(item => item.asin.trim() !== '');
+if (validData.length === 0) {
+alert('⚠ No valid data to save. Please ensure ASIN is filled.');
+return;
+}
+
+const dataWithInvoiceInfo = validData.map(item => ({
+...item,
+invoiceId: state.fcInvoiceId,
+date: state.fcInvoiceDate
+}));
+
+state.savedInvoices[state.selectedVendor].push(...dataWithInvoiceInfo);
+state.fcInvoiceData = [{ id: 1, asin: '', quantity: '', itemPrice: '' }];
+state.fcInvoiceId = '';
+state.fcInvoiceDate = '';
+saveData();
+render();
+alert(`✓ Saved FC Invoice with ${validData.length} items for ${state.selectedVendor}!`);
+}
+
+function exportFcInvoiceToExcel() {
+const validItems = state.fcInvoiceData.filter(item => item.asin && item.asin.trim() !== '');
+
+if (validItems.length === 0) {
+alert('⚠ No data to export');
+return;
+}
+
+const headers = ['Invoice ID', 'Date', 'ASIN', 'Quantity', 'Item Price', 'ASIN Cost', 'Gross Revenue', 'Net Revenue', 'Margin %', 'ROI %'];
+let csvContent = headers.join(',') + '\n';
+
+validItems.forEach(item => {
+const metrics = calculateRowMetrics({...item, invoiceId: state.fcInvoiceId, date: state.fcInvoiceDate});
+const asinCost = getAsinCost(item.asin);
+
+const row = [
+state.fcInvoiceId || 'N/A',
+state.fcInvoiceDate || 'N/A',
+item.asin,
+item.quantity || 0,
+item.itemPrice || 0,
+asinCost.toFixed(2),
+metrics.grossRevenue.toFixed(2),
+metrics.netRevenue.toFixed(2),
+metrics.marginPercent.toFixed(2),
+metrics.roi.toFixed(2)
+];
+
+csvContent += row.join(',') + '\n';
+});
+
+const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+const url = URL.createObjectURL(blob);
+const link = document.createElement('a');
+link.href = url;
+link.download = `fc_invoice_${state.fcInvoiceId || 'export'}_${Date.now()}.csv`;
+link.click();
+URL.revokeObjectURL(url);
+
+alert('✓ Export completed successfully!');
+}
+
+document.getElementById('fc-file-input').addEventListener('change', (e) => {
+const file = e.target.files[0];
+if (!file) return;
+
+const reader = new FileReader();
+reader.onload = (event) => {
+try {
+const content = event.target.result;
+const lines = content.split('\n').filter(line => line.trim());
+if (lines.length < 2) {
+alert('File has insufficient data');
+return;
+}
+
+const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+const poIndex = headers.findIndex(h => h.includes('po'));
+const asinIndex = headers.findIndex(h => h === 'asin');
+const qtyIndex = headers.findIndex(h => h === 'qty' || h === 'quantity');
+const priceIndex = headers.findIndex(h => h.includes('cost price') || h.includes('price'));
+
+const importedData = [];
+let idCounter = 1;
+let currentPO = '';
+
+for (let i = 1; i < lines.length; i++) {
+const regex = /,(?=(?:(?:[^"]*"){2})*[^"]*$)/;
+const columns = lines[i].split(regex).map(col => col.trim().replace(/^["']|["']$/g, ''));
+
+if (poIndex !== -1 && columns[poIndex]) {
+currentPO = columns[poIndex];
+}
+
+const asin = asinIndex !== -1 ? columns[asinIndex] : '';
+const quantity = qtyIndex !== -1 ? columns[qtyIndex].replace(/,/g, '') : '';
+const itemPrice = priceIndex !== -1 ? columns[priceIndex].replace(/[₹,$,]/g, '').trim() : '';
+
+if (asin && quantity) {
+importedData.push({
+id: idCounter++,
+asin,
+quantity,
+itemPrice
+});
+}
+}
+
+if (importedData.length > 0) {
+state.fcInvoiceData = importedData;
+if (currentPO) {
+state.fcInvoiceId = currentPO;
+}
+render();
+alert(`✓ Imported ${importedData.length} items successfully!`);
+}
+} catch (error) {
+console.error('FC Import error:', error);
+alert('Error importing file. Please check the file format.');
+}
+};
+reader.readAsText(file);
+e.target.value = '';
+});
+
+// VRET & COGS Functions
+function renderVretCogs() {
+let html = `
+<div class="card">
+<div class="card-header">
+<h2 class="card-title">VRET & COGS Management</h2>
+<div class="btn-group">
+<button class="btn btn-success" onclick="addVretCogsRow()">
+➕ Add Row
+</button>
+<button class="btn btn-primary" onclick="saveVretCogsData()">
+💾 Save Data
+</button>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table>
+<thead>
+<tr>
+<th style="width: 40px;">#</th>
+<th>Month</th>
+<th>Year</th>
+<th>VRET (₹)</th>
+<th>COGS Discount (₹)</th>
+<th style="width: 60px;">Action</th>
+</tr>
+</thead>
+<tbody>
+${state.vretCogsData.map((item, index) => `
+<tr>
+<td>${index + 1}</td>
+<td>
+<select onchange="updateVretCogsRow(${item.id}, 'month', this.value)" style="width: 150px;">
+<option value="">Select Month</option>
+${['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'].map((m, i) =>
+`<option value="${m}" ${item.month === m ? 'selected' : ''}>${['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][i]}</option>`
+).join('')}
+</select>
+</td>
+<td>
+<input type="number" value="${item.year}"
+onchange="updateVretCogsRow(${item.id}, 'year', this.value)"
+placeholder="2024" style="width: 100px;">
+</td>
+<td>
+<input type="number" step="0.01" value="${item.vret}"
+onchange="updateVretCogsRow(${item.id}, 'vret', this.value)"
+placeholder="0.00" style="width: 120px;">
+</td>
+<td>
+<input type="number" step="0.01" value="${item.cogs}"
+onchange="updateVretCogsRow(${item.id}, 'cogs', this.value)"
+placeholder="0.00" style="width: 120px;">
+</td>
+<td style="text-align: center;">
+<button class="icon-btn" onclick="deleteVretCogsRow(${item.id})"
+${state.vretCogsData.length === 1 ? 'disabled' : ''}>
+🗑️
+</button>
+</td>
+</tr>
+`).join('')}
+</tbody>
+</table>
+</div>
+</div>
+`;
+
+if (state.savedVretCogs[state.selectedVendor].length > 0) {
+html += `
+<div class="card mt-4">
+<h3 class="card-title mb-4">Saved VRET & COGS Entries</h3>
+<div class="overflow-x-auto">
+<table>
+<thead>
+<tr>
+<th>Month</th>
+<th>Year</th>
+<th>VRET (₹)</th>
+<th>COGS Discount (₹)</th>
+<th style="width: 80px;">Action</th>
+</tr>
+</thead>
+<tbody>
+${state.savedVretCogs[state.selectedVendor].map(item => {
+const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+return `
+<tr>
+<td>${monthNames[parseInt(item.month) - 1]}</td>
+<td>${item.year}</td>
+<td class="text-right">${formatCurrency(item.vret)}</td>
+<td class="text-right">${formatCurrency(item.cogs)}</td>
+<td style="text-align: center;">
+<button class="icon-btn" onclick="deleteVretCogsEntry(${item.id})">
+🗑️
+</button>
+</td>
+</tr>
+`;
+}).join('')}
+</tbody>
+</table>
+</div>
+</div>
+`;
+}
+
+document.getElementById('vret-cogs-content').innerHTML = html;
+}
+
+function addVretCogsRow() {
+const newId = state.vretCogsData.length > 0 ? Math.max(...state.vretCogsData.map(item => item.id)) + 1 : 1;
+state.vretCogsData.push({ id: newId, month: '', year: '', vret: '', cogs: '' });
+render();
+}
+
+function deleteVretCogsRow(id) {
+if (state.vretCogsData.length > 1) {
+state.vretCogsData = state.vretCogsData.filter(item => item.id !== id);
+render();
+}
+}
+
+function updateVretCogsRow(id, field, value) {
+state.vretCogsData = state.vretCogsData.map(item =>
+item.id === id ? { ...item, [field]: value } : item
+);
+}
+
+function saveVretCogsData() {
+const validData = state.vretCogsData.filter(item =>
+item.month.trim() !== '' && item.year.trim() !== ''
+);
+
+if (validData.length === 0) {
+alert('⚠ No valid data to save. Please ensure Month and Year are filled.');
+return;
+}
+
+state.savedVretCogs[state.selectedVendor].push(...validData);
+state.vretCogsData = [{ id: 1, month: '', year: '', vret: '', cogs: '' }];
+saveData();
+render();
+alert(`✓ Saved ${validData.length} VRET/COGS entries for ${state.selectedVendor}!`);
+}
+
+function deleteVretCogsEntry(id) {
+state.savedVretCogs[state.selectedVendor] = state.savedVretCogs[state.selectedVendor].filter(item => item.id !== id);
+saveData();
+render();
+alert('✓ VRET/COGS entry deleted successfully!');
+}
+
+// Saved Invoices Functions
+function renderSavedInvoices() {
+const invoiceGroups = {};
+const currentInvoices = state.savedInvoices[state.selectedVendor] || [];
+
+currentInvoices.forEach(item => {
+if (!item.invoiceId || !item.asin) return;
+
+if (!invoiceGroups[item.invoiceId]) {
+invoiceGroups[item.invoiceId] = {
+invoiceId: item.invoiceId,
+date: item.date,
+items: []
+};
+}
+
+invoiceGroups[item.invoiceId].items.push(item);
+});
+
+const invoiceAnalysis = Object.values(invoiceGroups).map(invoice => {
+let totalGrossRevenue = 0;
+let totalCOGS = 0;
+
+invoice.items.forEach(item => {
+const metrics = calculateRowMetrics(item);
+totalGrossRevenue += metrics.grossRevenue;
+totalCOGS += metrics.totalCost;
+});
+
+const freightCosts = state.freightCosts[state.selectedVendor] || {};
+const freight = parseFloat(freightCosts[invoice.invoiceId]) || 0;
+const profit = totalGrossRevenue - totalCOGS - freight;
+const marginPercent = totalGrossRevenue > 0 ? (profit / totalGrossRevenue) * 100 : 0;
+const roi = totalCOGS > 0 ? (profit / totalCOGS) * 100 : 0;
+
+return {
+invoiceId: invoice.invoiceId,
+date: invoice.date,
+grossRevenue: totalGrossRevenue,
+cogs: totalCOGS,
+freight: freight,
+profit: profit,
+marginPercent: marginPercent,
+roi: roi
+};
+});
+
+let html = '';
+
+if (invoiceAnalysis.length === 0) {
+html = `
+<div class="empty-state">
+<svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+</svg>
+<h3 style="font-size: 1.25rem; font-weight: 600; color: #111827; margin-bottom: 0.5rem;">No Saved Invoices</h3>
+<p>Start by adding invoices from DF Invoice or FC Invoice tabs</p>
+</div>
+`;
+} else {
+html = `
+<div class="card">
+<h2 class="card-title mb-4">Saved Invoices Summary</h2>
+<div class="search-box">
+<input type="text" id="search-saved-invoices" placeholder="Search by Invoice ID, Date..."
+onkeyup="filterSavedInvoices()" />
+</div>
+<div class="overflow-x-auto">
+<table id="saved-invoices-table">
+<thead>
+<tr>
+<th>Invoice ID</th>
+<th>Date</th>
+<th>Gross Revenue</th>
+<th>COGS</th>
+<th>Freight Cost</th>
+<th>Profit</th>
+<th>Margin %</th>
+<th>ROI %</th>
+<th style="width: 100px;">Actions</th>
+</tr>
+</thead>
+<tbody>
+${invoiceAnalysis.map(invoice => `
+<tr>
+<td class="font-semibold">${invoice.invoiceId}</td>
+<td>${invoice.date || 'N/A'}</td>
+<td class="text-right">${formatCurrency(invoice.grossRevenue)}</td>
+<td class="text-right">${formatCurrency(invoice.cogs)}</td>
+<td>
+<input type="number" step="0.01"
+value="${invoice.freight || ''}"
+onchange="updateFreightCost('${invoice.invoiceId}', this.value); render();"
+placeholder="0.00" style="width: 100px;">
+</td>
+<td class="text-right ${invoice.profit >= 0 ? 'text-green' : 'text-red'} font-semibold">
+${formatCurrency(invoice.profit)}
+</td>
+<td class="text-right">
+<span class="badge ${invoice.marginPercent >= 20 ? 'badge-green' : invoice.marginPercent >= 10 ? 'badge-blue' : invoice.marginPercent >= 0 ? 'badge-yellow' : 'badge-red'}">
+${invoice.marginPercent.toFixed(1)}%
+</span>
+</td>
+<td class="text-right">
+<span class="badge ${invoice.roi >= 50 ? 'badge-green' : invoice.roi >= 25 ? 'badge-blue' : invoice.roi >= 0 ? 'badge-yellow' : 'badge-red'}">
+${invoice.roi.toFixed(1)}%
+</span>
+</td>
+<td style="text-align: center;">
+<button class="btn btn-red" style="padding: 0.25rem 0.75rem; font-size: 0.75rem;"
+onclick="deleteInvoice('${invoice.invoiceId}')">
+${state.deleteConfirm === invoice.invoiceId ? 'Confirm?' : '🗑️ Delete'}
+</button>
+</td>
+</tr>
+`).join('')}
+</tbody>
+</table>
+</div>
+</div>
+`;
+}
+
+document.getElementById('saved-invoices-content').innerHTML = html;
+}
+
+function updateFreightCost(invoiceId, value) {
+if (!state.freightCosts[state.selectedVendor]) {
+state.freightCosts[state.selectedVendor] = {};
+}
+state.freightCosts[state.selectedVendor][invoiceId] = value;
+saveData();
+}
+
+function deleteInvoice(invoiceId) {
+if (state.deleteConfirm === invoiceId) {
+state.savedInvoices[state.selectedVendor] = state.savedInvoices[state.selectedVendor].filter(
+item => item.invoiceId !== invoiceId
+);
+
+if (state.freightCosts[state.selectedVendor]) {
+delete state.freightCosts[state.selectedVendor][invoiceId];
+}
+
+state.deleteConfirm = null;
+saveData();
+render();
+alert(`✓ Invoice ${invoiceId} deleted successfully!`);
+} else {
+state.deleteConfirm = invoiceId;
+render();
+setTimeout(() => {
+state.deleteConfirm = null;
+render();
+}, 3000);
+}
+}
+
+// Advertising Functions
+function renderAdvertising() {
+const currentAds = state.advertisingData[state.selectedVendor] || [];
+const totalSpend = currentAds.reduce((sum, item) => sum + item.spend, 0);
+const totalSales = currentAds.reduce((sum, item) => sum + item.sales, 0);
+const totalOrders = currentAds.reduce((sum, item) => sum + item.orders, 0);
+const avgAcos = totalSales > 0 ? (totalSpend / totalSales) * 100 : 0;
+const avgRoas = totalSpend > 0 ? totalSales / totalSpend : 0;
+
+// Group by ASIN
+const byAsin = {};
+currentAds.forEach(item => {
+if (!byAsin[item.asin]) {
+byAsin[item.asin] = {
+asin: item.asin,
+totalSpend: 0,
+totalSales: 0,
+totalOrders: 0,
+totalClicks: 0,
+totalImpressions: 0
+};
+}
+byAsin[item.asin].totalSpend += item.spend;
+byAsin[item.asin].totalSales += item.sales;
+byAsin[item.asin].totalOrders += item.orders;
+byAsin[item.asin].totalClicks += item.clicks;
+byAsin[item.asin].totalImpressions += item.impressions;
+});
+
+const topSpenders = Object.values(byAsin)
+.sort((a, b) => b.totalSpend - a.totalSpend)
+.slice(0, 10);
+
+let html = `
+<div style="background: linear-gradient(135deg, #ea580c 0%, #dc2626 100%); color: white; padding: 1.5rem; border-radius: 0.75rem; margin-bottom: 1.5rem;">
+<h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Advertising Analytics Dashboard</h2>
+<p style="opacity: 0.9;">Monitor advertising performance and optimize your campaigns</p>
+</div>
+`;
+
+if (currentAds.length === 0) {
+html += `
+<div class="card">
+<div class="card-header">
+<h2 class="card-title">Advertising Data</h2>
+<button class="btn btn-purple" onclick="document.getElementById('advertising-file-input').click()">
+📤 Import CSV
+</button>
+</div>
+<div class="empty-state">
+<svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+</svg>
+<h3 style="font-size: 1.25rem; font-weight: 600; color: #111827; margin-bottom: 0.5rem;">No Advertising Data</h3>
+<p>Import advertising reports to analyze campaign performance</p>
+</div>
+</div>
+`;
+} else {
+html += `
+<div class="grid grid-cols-4 mb-4">
+<div class="stat-card" style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);">
+<div class="stat-label">Total Ad Spend</div>
+<div class="stat-value">${formatCurrency(totalSpend)}</div>
+<div class="stat-subtitle">${currentAds.length} campaigns</div>
+</div>
+<div class="stat-card" style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);">
+<div class="stat-label">Total Sales</div>
+<div class="stat-value">${formatCurrency(totalSales)}</div>
+<div class="stat-subtitle">${totalOrders} orders</div>
+</div>
+<div class="stat-card" style="background: linear-gradient(135deg, #9333ea 0%, #7e22ce 100%);">
+<div class="stat-label">Average ROAS</div>
+<div class="stat-value">${avgRoas.toFixed(2)}x</div>
+<div class="stat-subtitle">Return on Ad Spend</div>
+</div>
+<div class="stat-card" style="background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);">
+<div class="stat-label">Average ACOS</div>
+<div class="stat-value">${avgAcos.toFixed(1)}%</div>
+<div class="stat-subtitle">Ad Cost of Sales</div>
+</div>
+</div>
+
+<div class="card mb-4">
+<div class="card-header">
+<h3 class="card-title">Top 10 Products by Ad Spend</h3>
+<button class="btn btn-purple" onclick="document.getElementById('advertising-file-input').click()">
+📤 Import More Data
+</button>
+</div>
+<div class="search-box">
+<input type="text" id="search-top-ad-spend" placeholder="Search by ASIN..."
+onkeyup="filterDashboardTable('search-top-ad-spend', 'top-ad-spend-table')" />
+</div>
+<div class="overflow-x-auto">
+<table id="top-ad-spend-table">
+<thead>
+<tr>
+<th>#</th>
+<th>ASIN</th>
+<th>Total Spend</th>
+<th>Total Sales</th>
+<th>Orders</th>
+<th>ROAS</th>
+<th>ACOS</th>
+<th>Clicks</th>
+<th>Impressions</th>
+</tr>
+</thead>
+<tbody>
+${topSpenders.map((item, index) => {
+const roas = item.totalSpend > 0 ? item.totalSales / item.totalSpend : 0;
+const acos = item.totalSales > 0 ? (item.totalSpend / item.totalSales) * 100 : 0;
+return `
+<tr>
+<td>${index + 1}</td>
+<td class="font-semibold">${item.asin}</td>
+<td class="text-right text-red">${formatCurrency(item.totalSpend)}</td>
+<td class="text-right text-green">${formatCurrency(item.totalSales)}</td>
+<td class="text-right">${item.totalOrders}</td>
+<td class="text-right">
+<span class="badge ${roas >= 3 ? 'badge-green' : roas >= 2 ? 'badge-blue' : roas >= 1 ? 'badge-yellow' : 'badge-red'}">
+${roas.toFixed(2)}x
+</span>
+</td>
+<td class="text-right">
+<span class="badge ${acos <= 20 ? 'badge-green' : acos <= 35 ? 'badge-yellow' : 'badge-red'}">
+${acos.toFixed(1)}%
+</span>
+</td>
+<td class="text-right">${item.totalClicks.toLocaleString()}</td>
+<td class="text-right">${item.totalImpressions.toLocaleString()}</td>
+</tr>
+`;
+}).join('')}
+</tbody>
+</table>
+</div>
+</div>
+
+<div class="alert alert-info">
+<h4 class="font-semibold mb-2">📊 Performance Guide</h4>
+<div style="font-size: 0.875rem;">
+<p><strong>ROAS:</strong> 3x+ (Excellent) | 2-3x (Good) | 1-2x (Fair) | Below 1x (Poor - losing money)</p>
+<p><strong>ACOS:</strong> Below 20% (Excellent) | 20-35% (Good) | Above 35% (Review strategy)</p>
+<p><strong>Action:</strong> Increase budget for high ROAS products | Reduce/pause low ROAS products</p>
+</div>
+</div>
+
+<!-- Detailed Advertising Data Table -->
+<div class="card mt-4">
+<div class="card-header">
+<h3 class="card-title">All Advertising Data (Editable)</h3>
+<div class="btn-group">
+<button class="btn btn-gray" onclick="showDeleteByDateModal()">
+🗑️ Delete by Date
+</button>
+<button class="btn btn-red" onclick="clearAllAdvertisingData()">
+⚠️ Clear All Data
+</button>
+</div>
+</div>
+<div class="search-box">
+<input type="text" id="search-advertising" placeholder="Search by ASIN, Date..."
+onkeyup="filterAdvertising()" />
+</div>
+<div class="overflow-x-auto">
+<table id="advertising-table">
+<thead>
+<tr>
+<th style="width: 100px;">Date</th>
+<th>ASIN</th>
+<th style="width: 120px;">Spend (₹)</th>
+<th style="width: 120px;">Sales (₹)</th>
+<th style="width: 100px;">Orders</th>
+<th style="width: 100px;">Clicks</th>
+<th style="width: 120px;">Impressions</th>
+<th style="width: 80px;">ROAS</th>
+<th style="width: 80px;">ACOS</th>
+<th style="width: 150px;">Actions</th>
+</tr>
+</thead>
+<tbody>
+${currentAds.map((ad, index) => {
+const roas = ad.spend > 0 ? ad.sales / ad.spend : 0;
+const acos = ad.sales > 0 ? (ad.spend / ad.sales) * 100 : 0;
+return `
+<tr id="ad-row-${index}">
+<td>
+<input type="date" id="ad-date-${index}" value="${ad.date || ''}"
+style="width: 95px; font-size: 0.75rem; padding: 0.25rem;"
+onchange="updateAdField(${index}, 'date', this.value)">
+</td>
+<td>
+<input type="text" id="ad-asin-${index}" value="${ad.asin || ''}"
+style="width: 100%; font-weight: 600;"
+onchange="updateAdField(${index}, 'asin', this.value)">
+</td>
+<td>
+<input type="number" step="0.01" id="ad-spend-${index}" value="${ad.spend}"
+style="width: 100%; text-align: right;"
+onchange="updateAdField(${index}, 'spend', parseFloat(this.value))">
+</td>
+<td>
+<input type="number" step="0.01" id="ad-sales-${index}" value="${ad.sales}"
+style="width: 100%; text-align: right;"
+onchange="updateAdField(${index}, 'sales', parseFloat(this.value))">
+</td>
+<td>
+<input type="number" id="ad-orders-${index}" value="${ad.orders}"
+style="width: 100%; text-align: right;"
+onchange="updateAdField(${index}, 'orders', parseInt(this.value))">
+</td>
+<td>
+<input type="number" id="ad-clicks-${index}" value="${ad.clicks}"
+style="width: 100%; text-align: right;"
+onchange="updateAdField(${index}, 'clicks', parseInt(this.value))">
+</td>
+<td>
+<input type="number" id="ad-impressions-${index}" value="${ad.impressions}"
+style="width: 100%; text-align: right;"
+onchange="updateAdField(${index}, 'impressions', parseInt(this.value))">
+</td>
+<td class="text-right">
+<span class="badge ${roas >= 3 ? 'badge-green' : roas >= 2 ? 'badge-blue' : roas >= 1 ? 'badge-yellow' : 'badge-red'}">
+${roas.toFixed(2)}x
+</span>
+</td>
+<td class="text-right">
+<span class="badge ${acos <= 20 ? 'badge-green' : acos <= 35 ? 'badge-yellow' : 'badge-red'}">
+${acos.toFixed(1)}%
+</span>
+</td>
+<td style="text-align: center;">
+<button class="btn btn-red" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;"
+onclick="deleteAdEntry(${index})">
+🗑️ Delete
+</button>
+</td>
+</tr>
+`;
+}).join('')}
+</tbody>
+</table>
+</div>
+<div style="margin-top: 1rem; padding: 1rem; background: #f3f4f6; border-radius: 0.5rem;">
+<p style="font-size: 0.875rem; color: #6b7280; margin: 0;">
+📝 <strong>Tip:</strong> Click on any field to edit. Changes are saved automatically. Total entries: ${currentAds.length}
+</p>
+</div>
+</div>
+`;
+}
+
+document.getElementById('advertising-content').innerHTML = html;
+}
+
+document.getElementById('advertising-file-input').addEventListener('change', (e) => {
+const file = e.target.files[0];
+if (!file) return;
+
+// Show date picker modal
+showAdvertisingDateModal(file);
+});
+
+// Function to show date picker modal for advertising import
+function showAdvertisingDateModal(file) {
+console.log('📅 DEBUG: Opening date modal for file:', file ? file.name : 'NO FILE'); // ← ADD THIS LINE
+console.log('📅 DEBUG: File size:', file ? file.size : 'NO FILE'); // ← ADD THIS LINE
+
+const modal = `
+<div class="modal-overlay" id="ad-date-modal" onclick="if(event.target.id === 'ad-date-modal') closeAdDateModal()">
+<div class="modal" onclick="event.stopPropagation()">
+<div class="modal-header">
+<h2 class="modal-title">📅 Select Date for Advertising Data</h2>
+<button class="close-btn" onclick="closeAdDateModal()">×</button>
+</div>
+
+<div class="form-group">
+<label class="form-label">Import Date</label>
+<input type="date" id="ad-import-date" class="form-control"
+value="${new Date().toISOString().split('T')[0]}"
+style="width: 100%; padding: 0.75rem; border: 2px solid var(--gray-200); border-radius: var(--radius-sm); font-size: 0.9375rem;">
+<div class="form-help">This date will be applied to all imported advertising entries</div>
+</div>
+
+<div style="background: var(--gray-50); padding: 1rem; border-radius: var(--radius-sm); margin-top: 1rem;">
+<p style="font-size: 0.875rem; color: var(--gray-600); margin: 0;">
+📊 <strong>File:</strong> ${file.name}<br>
+💡 <strong>Tip:</strong> Use the date range from your advertising report
+</p>
+</div>
+
+<div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.5rem;">
+<button class="btn btn-gray" onclick="closeAdDateModal()">Cancel</button>
+<button class="btn btn-primary" onclick="processAdvertisingFile()">📤 Import Data</button>
+</div>
+</div>
+</div>
+`;
+
+document.body.insertAdjacentHTML('beforeend', modal);
+window.pendingAdFile = file;
+}
+
+function closeAdDateModal() {
+const modal = document.getElementById('ad-date-modal');
+if (modal) modal.remove();
+window.pendingAdFile = null;
+document.getElementById('advertising-file-input').value = '';
+}
+
+function processAdvertisingFile() {
+const file = window.pendingAdFile;
+const dateInput = document.getElementById('ad-import-date');
+const selectedDate = dateInput ? dateInput.value : new Date().toISOString().split('T')[0];
+
+console.log('🔍 DEBUG START - processAdvertisingFile'); // ← ADD THIS
+console.log('🔍 File:', file ? file.name : 'NO FILE'); // ← ADD THIS
+console.log('🔍 Date selected:', selectedDate); // ← ADD THIS
+console.log('🔍 Current vendor:', state.selectedVendor); // ← ADD THIS
+
+if (!file) {
+console.log('❌ ERROR: No file found!'); // ← ADD THIS
+showNotification('⚠ No file selected', 'error');
+return;
+}
+
+if (!selectedDate) {
+console.log('❌ ERROR: No date selected!'); // ← ADD THIS
+showNotification('⚠ Please select a date', 'error');
+return;
+}
+
+console.log('✅ Starting file read...'); // ← ADD THIS
+
+if (!selectedDate) {
+showNotification('⚠ Please select a date', 'error');
+return;
+}
+
+closeAdDateModal();
+
+const reader = new FileReader();
+reader.onload = (event) => {
+try {
+const content = event.target.result;
+const lines = content.split('\n').filter(line => line.trim());
+
+console.log('📊 Processing advertising file...');
+console.log('Total lines:', lines.length);
+
+if (lines.length < 2) {
+showNotification('⚠ File has insufficient data', 'error');
+return;
+}
+
+// Find header row (look for row with ASIN column)
+let headerIndex = -1;
+for (let i = 0; i < Math.min(5, lines.length); i++) {
+const line = lines[i].toLowerCase();
+if (line.includes('asin') && (line.includes('impression') || line.includes('click') || line.includes('spend'))) {
+headerIndex = i;
+console.log('✓ Found header at line', i + 1);
+break;
+}
+}
+
+if (headerIndex === -1) {
+showNotification('⚠ Could not find valid header row with ASIN column', 'error');
+console.error('Header search failed. First 3 lines:', lines.slice(0, 3));
+return;
+}
+
+// Parse headers
+const headerLine = lines[headerIndex];
+const headers = headerLine.split(',').map(h => h.trim().replace(/^["']|["']$/g, '').toLowerCase());
+
+console.log('📋 Column headers found:', headers);
+
+// Find column indices (try multiple variations)
+const asinIndex = headers.findIndex(h => h === 'asin' || h === 'product asin');
+const impressionIndex = headers.findIndex(h =>
+h === 'impression' || h === 'impressions' || h.includes('impression')
+);
+const clickIndex = headers.findIndex(h =>
+h === 'click' || h === 'clicks' || h.includes('click')
+);
+const spendIndex = headers.findIndex(h =>
+h === 'spend' || h === 'ad spend' || h.includes('spend') || h.includes('cost')
+);
+const salesIndex = headers.findIndex(h =>
+h === 'sales' || h === 'revenue' || h.includes('sales')
+);
+const ordersIndex = headers.findIndex(h =>
+h === 'orders' || h === 'order' || h.includes('order')
+);
+
+console.log('📍 Column indices:', {
+asin: asinIndex,
+impressions: impressionIndex,
+clicks: clickIndex,
+spend: spendIndex,
+sales: salesIndex,
+orders: ordersIndex
+});
+
+if (asinIndex === -1) {
+showNotification('⚠ ASIN column not found in file', 'error');
+return;
+}
+
+// Process data rows
+const importedData = [];
+let totalSpend = 0;
+let totalSales = 0;
+let skippedRows = 0;
+
+for (let i = headerIndex + 1; i < lines.length; i++) {
+const line = lines[i].trim();
+
+// Skip empty lines and total rows
+if (!line || line.toLowerCase().startsWith('total')) {
+continue;
+}
+
+// Parse CSV with proper quote handling
+const regex = /,(?=(?:(?:[^"]*"){2})*[^"]*$)/;
+const columns = line.split(regex).map(col => col.trim().replace(/^["']|["']$/g, ''));
+
+const asin = columns[asinIndex] || '';
+
+// Validate ASIN
+if (!asin || asin.length < 5 || asin.toLowerCase() === 'asin') {
+skippedRows++;
+continue;
+}
+
+// Parse numeric values safely
+const parseValue = (val) => {
+if (!val || val === '') return 0;
+const cleaned = val.toString().replace(/[₹,$,\s]/g, '').trim();
+const parsed = parseFloat(cleaned);
+return isNaN(parsed) ? 0 : parsed;
+};
+
+const impressions = impressionIndex !== -1 ? parseValue(columns[impressionIndex]) : 0;
+const clicks = clickIndex !== -1 ? parseValue(columns[clickIndex]) : 0;
+const spend = spendIndex !== -1 ? parseValue(columns[spendIndex]) : 0;
+const sales = salesIndex !== -1 ? parseValue(columns[salesIndex]) : 0;
+const orders = ordersIndex !== -1 ? parseValue(columns[ordersIndex]) : 0;
+
+// Only include rows with spend > 0
+if (spend > 0) {
+importedData.push({
+asin: asin.trim(),
+sales: sales,
+spend: spend,
+orders: orders,
+clicks: clicks,
+impressions: impressions,
+date: selectedDate
+});
+totalSpend += spend;
+totalSales += sales;
+} else {
+skippedRows++;
+}
+}
+
+console.log('✅ Processing complete:', {
+imported: importedData.length,
+skipped: skippedRows,
+totalSpend: totalSpend,
+totalSales: totalSales
+});
+if (importedData.length > 0) {
+console.log('✅ About to add data to state...');
+console.log('✅ Vendor:', state.selectedVendor);
+console.log('✅ Data to add:', importedData.length, 'entries');
+
+// Add to state
+if (!state.advertisingData[state.selectedVendor]) {
+state.advertisingData[state.selectedVendor] = [];
+}
+
+console.log('✅ Before push - current count:', state.advertisingData[state.selectedVendor].length);
+state.advertisingData[state.selectedVendor].push(...importedData);
+console.log('✅ After push - new count:', state.advertisingData[state.selectedVendor].length);
+
+saveData();
+console.log('✅ Data saved to localStorage');
+render();
+console.log('✅ Render complete');
+
+let message = `✅ Imported ${importedData.length} ASINs!\n`;
+message += `📅 Date: ${selectedDate}\n`;
+message += `💰 Total Spend: ${formatCurrency(totalSpend)}\n`;
+message += `💵 Total Sales: ${formatCurrency(totalSales)}`;
+
+if (skippedRows > 0) {
+message += `\n⚠️ Skipped ${skippedRows} rows (zero spend or invalid)`;
+}
+
+showNotification(message, 'success');
+
+console.log('✓ Data added to state:', state.advertisingData[state.selectedVendor].length, 'total entries');
+} else {
+showNotification('⚠ No valid data found in file (all rows had zero spend)', 'warning');
+}
+````
+} catch (error) {
+console.error('❌ Import error:', error);
+console.error('Error stack:', error.stack);
+showNotification('⚠ Error importing file: ' + error.message, 'error');
+}
+};
+
+reader.onerror = () => {
+showNotification('⚠ Error reading file', 'error');
+};
+
+reader.readAsText(file);
+}
+
+// Make functions globally available
+window.showAdvertisingDateModal = showAdvertisingDateModal;
+window.closeAdDateModal = closeAdDateModal;
+window.processAdvertisingFile = processAdvertisingFile;
+// Dashboard Functions
+function getMonthlyProfitability() {
+const monthlyData = {};
+const currentInvoices = state.savedInvoices[state.selectedVendor] || [];
+const currentFreight = state.freightCosts[state.selectedVendor] || {};
+const currentVretCogs = state.savedVretCogs[state.selectedVendor] || [];
+const currentAds = state.advertisingData[state.selectedVendor] || [];
+
+currentInvoices.forEach(item => {
+if (!item.date || !item.asin) return;
+
+const date = parseDate(item.date);
+if (!date) {
+console.warn('Skipping invoice with invalid date:', item.date);
+return;
+}
+
+const monthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+if (!monthlyData[monthYear]) {
+monthlyData[monthYear] = {
+month: date.toLocaleString('default', { month: 'long' }),
+year: date.getFullYear(),
+grossRevenue: 0,
+totalCost: 0,
+freight: 0,
+vret: 0,
+cogsDiscount: 0,
+adSpend: 0
+};
+}
+
+const metrics = calculateRowMetrics(item);
+monthlyData[monthYear].grossRevenue += metrics.grossRevenue;
+monthlyData[monthYear].totalCost += metrics.totalCost;
+
+if (item.invoiceId && currentFreight[item.invoiceId]) {
+const invoiceItems = currentInvoices.filter(inv => inv.invoiceId === item.invoiceId);
+monthlyData[monthYear].freight += parseFloat(currentFreight[item.invoiceId]) / invoiceItems.length;
+}
+});
+
+currentVretCogs.forEach(entry => {
+const monthYear = `${entry.year}-${String(entry.month).padStart(2, '0')}`;
+if (monthlyData[monthYear]) {
+monthlyData[monthYear].vret += parseFloat(entry.vret) || 0;
+monthlyData[monthYear].cogsDiscount += parseFloat(entry.cogs) || 0;
+} else {
+const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+monthlyData[monthYear] = {
+month: monthNames[parseInt(entry.month) - 1],
+year: parseInt(entry.year),
+grossRevenue: 0,
+totalCost: 0,
+freight: 0,
+vret: parseFloat(entry.vret) || 0,
+cogsDiscount: parseFloat(entry.cogs) || 0,
+adSpend: 0
+};
+}
+});
+
+currentAds.forEach(ad => {
+if (!ad.date) return;
+const date = parseDate(ad.date);
+if (!date) return;
+const monthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+if (monthlyData[monthYear]) {
+monthlyData[monthYear].adSpend = (monthlyData[monthYear].adSpend || 0) + (ad.spend || 0);
+}
+});
+
+return Object.entries(monthlyData)
+.map(([key, data]) => {
+const adSpend = data.adSpend || 0;
+const profit = data.grossRevenue - data.totalCost - data.freight - data.vret - data.cogsDiscount - adSpend;
+const marginPercent = data.grossRevenue > 0 ? (profit / data.grossRevenue) * 100 : 0;
+const roi = data.totalCost > 0 ? (profit / data.totalCost) * 100 : 0;
+
+return {
+monthYear: key,
+month: data.month,
+year: data.year,
+grossRevenue: data.grossRevenue,
+totalCost: data.totalCost,
+freight: data.freight,
+vret: data.vret,
+cogsDiscount: data.cogsDiscount,
+adSpend: adSpend,
+profit: profit,
+marginPercent: marginPercent,
+roi: roi
+};
+})
+.sort((a, b) => a.monthYear.localeCompare(b.monthYear));
+}
+
+
+// Render Weekly ASIN Margins (helper for dashboard)
+function renderWeeklyAsinMargins() {
+const weeklyMargins = getWeeklyAsinMargins();
+
+if (weeklyMargins.best.length === 0 && weeklyMargins.worst.length === 0) {
+return '<p class="text-gray">No weekly data available. Add invoices from the last 7 days to see analysis.</p>';
+}
+
+return `
+<div class="grid grid-cols-2">
+<!-- Best Margins -->
+<div>
+<h4 style="color: #16a34a; font-weight: 600; margin-bottom: 1rem;">✅ Best Margin ASINs</h4>
+<table style="font-size: 0.875rem;">
+<thead>
+<tr>
+<th>ASIN</th>
+<th class="text-right">Profit</th>
+<th class="text-right">Margin</th>
+</tr>
+</thead>
+<tbody>
+${weeklyMargins.best.map(asin => `
+<tr style="background: #f0fdf4;">
+<td class="font-semibold">${asin.asin}</td>
+<td class="text-right text-green">${formatCurrency(asin.profit)}</td>
+<td class="text-right">
+<span class="badge badge-green">${asin.marginPercent.toFixed(1)}%</span>
+</td>
+</tr>
+`).join('')}
+${weeklyMargins.best.length === 0 ? '<tr><td colspan="3" class="text-center text-gray">No profitable products this week</td></tr>' : ''}
+</tbody>
+</table>
+</div>
+
+<!-- Worst Margins -->
+<div>
+<h4 style="color: #dc2626; font-weight: 600; margin-bottom: 1rem;">⚠️ Low Margin ASINs (Need Improvement)</h4>
+<table style="font-size: 0.875rem;">
+<thead>
+<tr>
+<th>ASIN</th>
+<th class="text-right">Profit</th>
+<th class="text-right">Margin</th>
+</tr>
+</thead>
+<tbody>
+${weeklyMargins.worst.map(asin => `
+<tr style="background: #fef2f2;">
+<td class="font-semibold">${asin.asin}</td>
+<td class="text-right ${asin.profit >= 0 ? 'text-green' : 'text-red'}">${formatCurrency(asin.profit)}</td>
+<td class="text-right">
+<span class="badge ${asin.marginPercent >= 0 ? 'badge-yellow' : 'badge-red'}">${asin.marginPercent.toFixed(1)}%</span>
+</td>
+</tr>
+`).join('')}
+${weeklyMargins.worst.length === 0 ? '<tr><td colspan="3" class="text-center text-gray">No data available</td></tr>' : ''}
+</tbody>
+</table>
+
+<div class="alert alert-info" style="margin-top: 1rem;">
+<h4 class="font-semibold mb-2">💡 Recommendations:</h4>
+<ul style="font-size: 0.875rem; margin-left: 1.5rem;">
+<li>Review pricing for low-margin ASINs</li>
+<li>Reduce ad spend on unprofitable products</li>
+<li>Consider discontinuing negative-margin items</li>
+<li>Negotiate better supplier costs</li>
+</ul>
+</div>
+</div>
+</div>
+`;
+}
+function renderDashboard() {
+const monthlyData = getMonthlyProfitability();
+const last5Days = getLast5DaysProfit();
+const topPerformingAsins = getTopPerformingAsins7Days();
+const lowPerformingAsins = getLowPerformingAsins7Days();
+const totalRevenue = monthlyData.reduce((sum, m) => sum + m.grossRevenue, 0);
+const totalCost = monthlyData.reduce((sum, m) => sum + m.totalCost, 0);
+const totalProfit = monthlyData.reduce((sum, m) => sum + m.profit, 0);
+const totalMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
+
+const currentYear = new Date().getFullYear();
+const yearlyData = monthlyData.filter(m => m.year === currentYear);
+const yearlyRevenue = yearlyData.reduce((sum, m) => sum + m.grossRevenue, 0);
+const yearlyProfit = yearlyData.reduce((sum, m) => sum + m.profit, 0);
+const yearlyMargin = yearlyRevenue > 0 ? (yearlyProfit / yearlyRevenue) * 100 : 0;
+
+let html = `
+<div style="background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); color: white; padding: 1.5rem; border-radius: 0.75rem; margin-bottom: 1.5rem;">
+<h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Business Performance Dashboard</h2>
+<p style="opacity: 0.9;">Comprehensive financial overview for ${state.selectedVendor}</p>
+</div>
+`;
+
+if (monthlyData.length === 0) {
+html += `
+<div class="empty-state">
+<svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+</svg>
+<h3 style="font-size: 1.25rem; font-weight: 600; color: #111827; margin-bottom: 0.5rem;">No Data Available</h3>
+<p>Start by adding invoices and costs to see your business analytics</p>
+</div>
+`;
+} else {
+html += `
+<div class="grid grid-cols-3 mb-4">
+<div class="stat-card" style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);">
+<div class="stat-label">Total Revenue</div>
+<div class="stat-value">${formatCurrency(totalRevenue)}</div>
+<div class="stat-subtitle">All-time</div>
+</div>
+<div class="stat-card" style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);">
+<div class="stat-label">Total Profit</div>
+<div class="stat-value">${formatCurrency(totalProfit)}</div>
+<div class="stat-subtitle">${totalMargin.toFixed(1)}% margin</div>
+</div>
+<div class="stat-card" style="background: linear-gradient(135deg, #9333ea 0%, #7e22ce 100%);">
+<div class="stat-label">Yearly Profit (${currentYear})</div>
+<div class="stat-value">${formatCurrency(yearlyProfit)}</div>
+<div class="stat-subtitle">${yearlyMargin.toFixed(1)}% margin</div>
+</div>
+</div>
+
+<!-- Last 5 Days Profit -->
+<div class="card">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+<h3 class="card-title" style="margin: 0;">📅 Daily Profit - Last 5 Days</h3>
+<div style="font-size: 0.875rem; color: #6b7280; font-weight: 500;">
+${last5Days.length > 0 ? `${last5Days[0].dateStr} - ${last5Days[last5Days.length-1].dateStr}` : 'No data'}
+</div>
+</div>
+<div style="overflow-x: auto;">
+<div style="min-width: 600px; height: 300px; position: relative;">
+${renderDailyProfitChart(last5Days)}
+</div>
+</div>
+<table style="margin-top: 1rem;">
+<thead>
+<tr>
+<th>Date</th>
+<th class="text-right">Revenue</th>
+<th class="text-right">Cost</th>
+<th class="text-right">Ad Spend</th>
+<th class="text-right">Profit</th>
+<th class="text-right">Margin %</th>
+</tr>
+</thead>
+<tbody>
+${last5Days.map(day => `
+<tr>
+<td class="font-semibold">${day.dateStr}</td>
+<td class="text-right">${formatCurrency(day.revenue)}</td>
+<td class="text-right">${formatCurrency(day.cost)}</td>
+<td class="text-right text-orange">${formatCurrency(day.adSpend)}</td>
+<td class="text-right ${day.profit >= 0 ? 'text-green' : 'text-red'} font-semibold">${formatCurrency(day.profit)}</td>
+<td class="text-right">
+<span class="badge ${day.marginPercent >= 20 ? 'badge-green' : day.marginPercent >= 0 ? 'badge-blue' : 'badge-red'}">${day.marginPercent.toFixed(1)}%</span>
+</td>
+</tr>
+`).join('')}
+</tbody>
+</table>
+</div>
+
+<!-- Top Performing ASINs -->
+<div class="card">
+<h3 class="card-title mb-4">🏆 Top Performing ASINs (Last 7 Days by Profit)</h3>
+${topPerformingAsins.length > 0 ? `
+<div class="search-box">
+<input type="text" id="search-top-asins" placeholder="Search by ASIN..."
+onkeyup="filterDashboardTable('search-top-asins', 'top-asins-table')" />
+</div>
+<table id="top-asins-table">
+<thead>
+<tr>
+<th>#</th>
+<th>ASIN</th>
+<th class="text-right">Revenue</th>
+<th class="text-right">Cost</th>
+<th class="text-right">Ad Spend</th>
+<th class="text-right">Profit</th>
+<th class="text-right">Margin %</th>
+<th class="text-right">Qty</th>
+</tr>
+</thead>
+<tbody>
+${topPerformingAsins.map((asin, index) => `
+<tr style="background: ${index === 0 ? '#f0fdf4' : 'white'};">
+<td class="font-semibold">${index + 1}</td>
+<td class="font-semibold" style="color: #2563eb;">${asin.asin}</td>
+<td class="text-right">${formatCurrency(asin.revenue)}</td>
+<td class="text-right">${formatCurrency(asin.cost)}</td>
+<td class="text-right text-orange">${formatCurrency(asin.adSpend)}</td>
+<td class="text-right text-green font-semibold">${formatCurrency(asin.profit)}</td>
+<td class="text-right">
+<span class="badge badge-green">${asin.marginPercent.toFixed(1)}%</span>
+</td>
+<td class="text-right">${asin.quantity}</td>
+</tr>
+`).join('')}
+</tbody>
+</table>
+` : '<p class="text-center text-gray" style="padding: 1rem;">No data available for the last 7 days</p>'}
+</div>
+
+<!-- Low Performing ASINs -->
+<div class="card">
+<h3 class="card-title mb-4">⚠️ Low Performing ASINs (Last 7 Days by Profit)</h3>
+${lowPerformingAsins.length > 0 ? `
+<div class="search-box">
+<input type="text" id="search-low-asins" placeholder="Search by ASIN..."
+onkeyup="filterDashboardTable('search-low-asins', 'low-asins-table')" />
+</div>
+<table id="low-asins-table">
+<thead>
+<tr>
+<th>#</th>
+<th>ASIN</th>
+<th class="text-right">Revenue</th>
+<th class="text-right">Cost</th>
+<th class="text-right">Ad Spend</th>
+<th class="text-right">Profit</th>
+<th class="text-right">Margin %</th>
+<th class="text-right">Qty</th>
+</tr>
+</thead>
+<tbody>
+${lowPerformingAsins.map((asin, index) => `
+<tr style="background: ${asin.profit < 0 ? '#fef2f2' : 'white'};">
+<td class="font-semibold">${index + 1}</td>
+<td class="font-semibold" style="color: #dc2626;">${asin.asin}</td>
+<td class="text-right">${formatCurrency(asin.revenue)}</td>
+<td class="text-right">${formatCurrency(asin.cost)}</td>
+<td class="text-right text-orange">${formatCurrency(asin.adSpend)}</td>
+<td class="text-right ${asin.profit >= 0 ? 'text-green' : 'text-red'} font-semibold">${formatCurrency(asin.profit)}</td>
+<td class="text-right">
+<span class="badge ${asin.marginPercent >= 0 ? 'badge-yellow' : 'badge-red'}">${asin.marginPercent.toFixed(1)}%</span>
+</td>
+<td class="text-right">${asin.quantity}</td>
+</tr>
+`).join('')}
+</tbody>
+</table>
+<div class="alert alert-info" style="margin-top: 1rem;">
+<h4 class="font-semibold mb-2">💡 Action Items:</h4>
+<ul style="font-size: 0.875rem; margin-left: 1.5rem;">
+<li>Review pricing strategy for low-profit ASINs</li>
+<li>Optimize or reduce ad spend on underperforming products</li>
+<li>Consider discontinuing negative-margin items</li>
+<li>Negotiate better supplier costs for these ASINs</li>
+</ul>
+</div>
+` : '<p class="text-center text-gray" style="padding: 1rem;">No data available for the last 7 days</p>'}
+</div>
+
+<div class="card">
+<h3 class="card-title mb-4">Monthly Profitability Analysis</h3>
+<div class="overflow-x-auto">
+<table>
+<thead>
+<tr>
+<th>Month</th>
+<th>Revenue</th>
+<th>COGS</th>
+<th>Freight</th>
+<th>VRET</th>
+<th>COGS Disc.</th>
+<th>Ad Spend</th>
+<th>Profit</th>
+<th>Margin %</th>
+<th>ROI %</th>
+</tr>
+</thead>
+<tbody>
+${monthlyData.map(month => `
+<tr>
+<td class="font-semibold">${month.month} ${month.year}</td>
+<td class="text-right text-green">${formatCurrency(month.grossRevenue)}</td>
+<td class="text-right">${formatCurrency(month.totalCost)}</td>
+<td class="text-right">${formatCurrency(month.freight)}</td>
+<td class="text-right">${formatCurrency(month.vret)}</td>
+<td class="text-right">${formatCurrency(month.cogsDiscount)}</td>
+<td class="text-right text-orange">${formatCurrency(month.adSpend)}</td>
+<td class="text-right ${month.profit >= 0 ? 'text-green' : 'text-red'} font-semibold">
+${formatCurrency(month.profit)}
+</td>
+<td class="text-right">
+<span class="badge ${month.marginPercent >= 20 ? 'badge-green' : month.marginPercent >= 10 ? 'badge-blue' : month.marginPercent >= 0 ? 'badge-yellow' : 'badge-red'}">
+${month.marginPercent.toFixed(1)}%
+</span>
+</td>
+<td class="text-right">
+<span class="badge ${month.roi >= 50 ? 'badge-green' : month.roi >= 25 ? 'badge-blue' : month.roi >= 0 ? 'badge-yellow' : 'badge-red'}">
+${month.roi.toFixed(1)}%
+</span>
+</td>
+</tr>
+`).join('')}
+</tbody>
+</table>
+</div>
+</div>
+`;
+}
+
+document.getElementById('dashboard-content').innerHTML = html;
+}
+
+// ROI Analysis Functions
+function getAsinMarginAnalysis() {
+const asinStats = {};
+const currentInvoices = state.savedInvoices[state.selectedVendor] || [];
+
+currentInvoices.forEach(item => {
+if (!item.asin) return;
+
+if (!asinStats[item.asin]) {
+asinStats[item.asin] = {
+asin: item.asin,
+totalRevenue: 0,
+totalCost: 0,
+quantity: 0
+};
+}
+
+const metrics = calculateRowMetrics(item);
+asinStats[item.asin].totalRevenue += metrics.grossRevenue;
+asinStats[item.asin].totalCost += metrics.totalCost;
+asinStats[item.asin].quantity += parseFloat(item.quantity) || 0;
+});
+
+const asinArray = Object.values(asinStats).map(asin => {
+const profit = asin.totalRevenue - asin.totalCost;
+const marginPercent = asin.totalRevenue > 0 ? (profit / asin.totalRevenue) * 100 : 0;
+const roi = asin.totalCost > 0 ? (profit / asin.totalCost) * 100 : 0;
+
+return {
+...asin,
+profit,
+marginPercent,
+roi
+};
+});
+
+const sortedByMargin = [...asinArray].sort((a, b) => b.marginPercent - a.marginPercent);
+
+return {
+highMargin: sortedByMargin.slice(0, 10),
+lowMargin: sortedByMargin.slice(-10).reverse(),
+all: sortedByMargin
+};
+}
+
+function renderROIAnalysis() {
+const asinAnalysis = getAsinMarginAnalysis();
+
+let html = `
+<div style="background: linear-gradient(135deg, #9333ea 0%, #7e22ce 100%); color: white; padding: 1.5rem; border-radius: 0.75rem; margin-bottom: 1.5rem;">
+<h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">ROI Analysis Dashboard</h2>
+<p style="opacity: 0.9;">Monitor Return on Investment across products, invoices, and time periods</p>
+</div>
+`;
+
+if (state.savedInvoices[state.selectedVendor].length === 0) {
+html += `
+<div class="empty-state">
+<svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+</svg>
+<h3 style="font-size: 1.25rem; font-weight: 600; color: #111827; margin-bottom: 0.5rem;">No ROI Data Available</h3>
+<p>Add invoices to see ROI analysis across different levels</p>
+</div>
+`;
+} else {
+const monthlyData = getMonthlyProfitability();
+const totalCost = monthlyData.reduce((sum, m) => sum + m.totalCost, 0);
+const totalProfit = monthlyData.reduce((sum, m) => sum + m.profit, 0);
+const overallROI = totalCost > 0 ? (totalProfit / totalCost) * 100 : 0;
+
+const currentYear = new Date().getFullYear();
+const yearData = monthlyData.filter(m => m.year === currentYear);
+const yearCost = yearData.reduce((sum, m) => sum + m.totalCost, 0);
+const yearProfit = yearData.reduce((sum, m) => sum + m.profit, 0);
+const yearlyROI = yearCost > 0 ? (yearProfit / yearCost) * 100 : 0;
+
+const bestMonth = monthlyData.length > 0 ? monthlyData.reduce((max, m) => m.roi > max.roi ? m : max) : null;
+
+html += `
+<div class="grid grid-cols-3 mb-4">
+<div class="stat-card" style="background: linear-gradient(135deg, #9333ea 0%, #7e22ce 100%);">
+<div class="stat-label">Overall ROI</div>
+<div class="stat-value">${overallROI.toFixed(2)}%</div>
+<div class="stat-subtitle">All-time return on investment</div>
+</div>
+<div class="stat-card" style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);">
+<div class="stat-label">Yearly ROI (${currentYear})</div>
+<div class="stat-value">${yearlyROI.toFixed(2)}%</div>
+<div class="stat-subtitle">Current year performance</div>
+</div>
+<div class="stat-card" style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);">
+<div class="stat-label">Best Month ROI</div>
+<div class="stat-value">${bestMonth ? bestMonth.roi.toFixed(2) + '%' : 'N/A'}</div>
+<div class="stat-subtitle">${bestMonth ? `${bestMonth.month} ${bestMonth.year}` : 'No data'}</div>
+</div>
+</div>
+
+<div class="card mb-4">
+<h3 class="card-title mb-4">📦 Product Level ROI (Top 15 ASINs)</h3>
+<div class="overflow-x-auto">
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>ASIN</th>
+<th>Units Sold</th>
+<th>Total Investment</th>
+<th>Revenue</th>
+<th>Profit</th>
+<th>ROI %</th>
+<th>Performance</th>
+</tr>
+</thead>
+<tbody>
+${asinAnalysis.all
+.sort((a, b) => b.roi - a.roi)
+.slice(0, 15)
+.map((asin, index) => {
+const maxRoi = Math.max(...asinAnalysis.all.map(a => a.roi));
+const roiWidth = maxRoi > 0 ? (Math.max(asin.roi, 0) / maxRoi) * 100 : 0;
+return `
+<tr>
+<td>${index + 1}</td>
+<td class="font-semibold">${asin.asin}</td>
+<td class="text-right">${asin.quantity}</td>
+<td class="text-right">${formatCurrency(asin.totalCost)}</td>
+<td class="text-right">${formatCurrency(asin.totalRevenue)}</td>
+<td class="text-right ${asin.profit >= 0 ? 'text-green' : 'text-red'} font-semibold">
+${formatCurrency(asin.profit)}
+</td>
+<td class="text-right">
+<span class="badge ${asin.roi >= 50 ? 'badge-green' : asin.roi >= 25 ? 'badge-blue' : asin.roi >= 0 ? 'badge-yellow' : 'badge-red'}">
+${asin.roi.toFixed(2)}%
+</span>
+</td>
+<td>
+<div class="progress-bar">
+<div class="progress-fill ${asin.roi >= 50 ? 'bg-green' : asin.roi >= 25 ? 'bg-blue' : asin.roi >= 0 ? 'bg-yellow' : 'bg-red'}"
+style="width: ${Math.min(roiWidth, 100)}%">
+</div>
+</div>
+</td>
+</tr>
+`;
+}).join('')}
+</tbody>
+</table>
+</div>
+</div>
+`;
+}
+
+document.getElementById('roi-analysis-content').innerHTML = html;
+}
+
+// Main Render Function
+
+// Monthly P&L Render Function
+function renderMonthlyPL() {
+const monthlyData = getMonthlyProfitabilityEnhanced();
+const years = [...new Set(monthlyData.map(m => m.year))].sort((a, b) => b - a);
+
+let html = `
+<div style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); color: white; padding: 1.5rem; border-radius: 0.75rem; margin-bottom: 1.5rem;">
+<h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">📅 Monthly Profit & Loss Analysis</h2>
+<p style="opacity: 0.9;">Complete monthly breakdown including advertising costs</p>
+</div>
+`;
+
+if (monthlyData.length === 0) {
+html += `
+<div class="empty-state">
+<svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+</svg>
+<h3>No Monthly Data Available</h3>
+<p>Add invoices to see monthly P&L analysis</p>
+</div>
+`;
+} else {
+const totalRevenue = monthlyData.reduce((sum, m) => sum + m.revenue, 0);
+const totalCost = monthlyData.reduce((sum, m) => sum + m.totalCost, 0);
+const totalAdSpend = monthlyData.reduce((sum, m) => sum + m.adSpend, 0);
+const totalProfit = monthlyData.reduce((sum, m) => sum + m.profit, 0);
+const totalVretCogs = monthlyData.reduce((sum, m) => sum + m.vretCogsCombined, 0);
+const totalFinalProfit = monthlyData.reduce((sum, m) => sum + m.finalProfit, 0);
+const avgMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
+const avgFinalMargin = totalRevenue > 0 ? (totalFinalProfit / totalRevenue) * 100 : 0;
+const bestMonth = monthlyData.reduce((max, m) => m.finalProfit > max.finalProfit ? m : max, monthlyData[0]);
+
+html += `
+<div class="grid grid-cols-4 mb-4">
+<div class="stat-card" style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);">
+<div class="stat-label">Total Revenue</div>
+<div class="stat-value">${formatCurrency(totalRevenue)}</div>
+<div class="stat-subtitle">All-time</div>
+</div>
+<div class="stat-card" style="background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);">
+<div class="stat-label">Total VRET & COGS</div>
+<div class="stat-value">${formatCurrency(totalVretCogs)}</div>
+<div class="stat-subtitle">Returns & Discounts</div>
+</div>
+<div class="stat-card" style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);">
+<div class="stat-label">Final Profit</div>
+<div class="stat-value">${formatCurrency(totalFinalProfit)}</div>
+<div class="stat-subtitle">${avgFinalMargin.toFixed(1)}% final margin</div>
+</div>
+<div class="stat-card" style="background: linear-gradient(135deg, #9333ea 0%, #7e22ce 100%);">
+<div class="stat-label">Best Month</div>
+<div class="stat-value">${formatCurrency(bestMonth.finalProfit)}</div>
+<div class="stat-subtitle">${bestMonth.month} ${bestMonth.year}</div>
+</div>
+</div>
+
+<div class="card">
+<div class="card-header">
+<h3 class="card-title">📊 Monthly Performance</h3>
+<button class="btn btn-success" onclick="exportMonthlyPLData()">📥 Export CSV</button>
+</div>
+<div class="overflow-x-auto">
+<table>
+<thead>
+<tr>
+<th>Month</th>
+<th class="text-right">Revenue</th>
+<th class="text-right">Cost</th>
+<th class="text-right">Ad Spend</th>
+<th class="text-right">Profit</th>
+<th class="text-right">VRET & COGS</th>
+<th class="text-right">Final Profit</th>
+<th class="text-right">Margin %</th>
+</tr>
+</thead>
+<tbody>
+${monthlyData.map(month => `
+<tr>
+<td class="font-semibold">${month.month} ${month.year}</td>
+<td class="text-right text-green">${formatCurrency(month.revenue)}</td>
+<td class="text-right">${formatCurrency(month.totalCost)}</td>
+<td class="text-right text-orange">${formatCurrency(month.adSpend)}</td>
+<td class="text-right ${month.profit >= 0 ? 'text-green' : 'text-red'}">
+${formatCurrency(month.profit)}
+</td>
+<td class="text-right text-red">
+${formatCurrency(month.vretCogsCombined)}
+</td>
+<td class="text-right ${month.finalProfit >= 0 ? 'text-green' : 'text-red'} font-semibold" style="background: ${month.finalProfit >= 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)'};">
+${formatCurrency(month.finalProfit)}
+</td>
+<td class="text-right">
+<span class="badge ${month.finalMarginPercent >= 20 ? 'badge-green' : month.finalMarginPercent >= 10 ? 'badge-blue' : month.finalMarginPercent >= 0 ? 'badge-yellow' : 'badge-red'}">
+${month.finalMarginPercent.toFixed(1)}%
+</span>
+</td>
+</tr>
+`).join('')}
+</tbody>
+</table>
+</div>
+</div>
+`;
+}
+
+document.getElementById('monthly-pl-content').innerHTML = html;
+}
+
+// Get ASIN monthly data
+function getAsinMonthlyData() {
+const asinMonthlyStats = {};
+const currentInvoices = state.savedInvoices[state.selectedVendor] || [];
+
+currentInvoices.forEach(item => {
+if (!item.date || !item.asin) return;
+
+const date = parseDate(item.date);
+if (!date) return;
+const monthKey = `${date.getFullYear()}-${String(date.getMonth()).padStart(2, '0')}`;
+const asinKey = `${item.asin}-${monthKey}`;
+
+if (!asinMonthlyStats[asinKey]) {
+asinMonthlyStats[asinKey] = {
+asin: item.asin,
+year: date.getFullYear(),
+month: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][date.getMonth()],
+monthIndex: date.getMonth(),
+revenue: 0,
+cost: 0,
+adSpend: 0,
+quantity: 0
+};
+}
+
+const qty = parseFloat(item.quantity) || 0;
+const itemPrice = parseFloat(item.itemPrice) || 0;
+const asinCost = getAsinCost(item.asin);
+
+asinMonthlyStats[asinKey].revenue += qty * itemPrice;
+asinMonthlyStats[asinKey].cost += qty * asinCost;
+asinMonthlyStats[asinKey].quantity += qty;
+});
+
+// Add ad spend for each ASIN-month
+const ads = state.advertisingData[state.selectedVendor] || [];
+Object.keys(asinMonthlyStats).forEach(key => {
+const stat = asinMonthlyStats[key];
+stat.adSpend = ads
+.filter(ad => {
+if (!ad.date || ad.asin !== stat.asin) return false;
+const adDate = parseDate(ad.date);
+if (!adDate) return false;
+return adDate.getFullYear() === stat.year && adDate.getMonth() === stat.monthIndex;
+})
+.reduce((sum, ad) => sum + (parseFloat(ad.spend) || 0), 0);
+
+stat.profit = stat.revenue - stat.cost - stat.adSpend;
+stat.marginPercent = stat.revenue > 0 ? (stat.profit / stat.revenue) * 100 : 0;
+stat.roi = (stat.cost + stat.adSpend) > 0 ? (stat.profit / (stat.cost + stat.adSpend)) * 100 : 0;
+});
+
+return Object.values(asinMonthlyStats).sort((a, b) => {
+if (a.year !== b.year) return b.year - a.year;
+if (a.monthIndex !== b.monthIndex) return b.monthIndex - a.monthIndex;
+return b.revenue - a.revenue;
+});
+}
+
+// ASIN Monthly Analysis Render Function
+function renderAsinMonthly() {
+const asinMonthlyData = getAsinMonthlyData();
+
+let html = `
+<div style="background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%); color: white; padding: 1.5rem; border-radius: 0.75rem; margin-bottom: 1.5rem;">
+<h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">📦 ASIN Monthly Analysis</h2>
+<p style="opacity: 0.9;">Track product performance month by month with ad costs</p>
+</div>
+`;
+
+if (asinMonthlyData.length === 0) {
+html += `
+<div class="empty-state">
+<svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+</svg>
+<h3 style="font-size: 1.25rem; font-weight: 600; color: #111827; margin-bottom: 0.5rem;">No ASIN Data Available</h3>
+<p>Add invoices with dates to see ASIN monthly performance</p>
+</div>
+`;
+} else {
+// Group by month for summary
+const monthSummary = {};
+asinMonthlyData.forEach(item => {
+const key = `${item.month} ${item.year}`;
+if (!monthSummary[key]) {
+monthSummary[key] = {
+month: item.month,
+year: item.year,
+monthIndex: item.monthIndex,
+totalRevenue: 0,
+totalProfit: 0,
+asinCount: 0
+};
+}
+monthSummary[key].totalRevenue += item.revenue;
+monthSummary[key].totalProfit += item.profit;
+monthSummary[key].asinCount++;
+});
+
+const summaryArray = Object.values(monthSummary).sort((a, b) => {
+if (a.year !== b.year) return b.year - a.year;
+return b.monthIndex - a.monthIndex;
+});
+
+html += `
+<div class="card mb-4">
+<h3 class="card-title mb-4">📊 Monthly Summary</h3>
+<div class="grid grid-cols-3 gap-4 mb-4">
+${summaryArray.slice(0, 3).map(summary => `
+<div class="stat-card" style="background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);">
+<div class="stat-label">${summary.month} ${summary.year}</div>
+<div class="stat-value">${formatCurrency(summary.totalProfit)}</div>
+<div class="stat-subtitle">${summary.asinCount} ASINs • ₹${formatCurrency(summary.totalRevenue)} revenue</div>
+</div>
+`).join('')}
+</div>
+</div>
+
+<div class="card">
+<div class="card-header">
+<h3 class="card-title">📦 ASIN Performance by Month</h3>
+<button class="btn btn-success" onclick="exportAsinMonthlyData()">📥 Export CSV</button>
+</div>
+<div class="overflow-x-auto">
+<table>
+<thead>
+<tr>
+<th>Month</th>
+<th>ASIN</th>
+<th class="text-right">Quantity</th>
+<th class="text-right">Revenue</th>
+<th class="text-right">Cost</th>
+<th class="text-right">Ad Spend</th>
+<th class="text-right">Profit</th>
+<th class="text-right">Margin %</th>
+<th class="text-right">ROI %</th>
+</tr>
+</thead>
+<tbody>
+${asinMonthlyData.map((item, index) => {
+const prevItem = index > 0 ? asinMonthlyData[index - 1] : null;
+const isNewMonth = !prevItem || prevItem.month !== item.month || prevItem.year !== item.year;
+return `
+<tr ${isNewMonth ? 'style="border-top: 2px solid #e5e7eb;"' : ''}>
+<td class="font-semibold">${isNewMonth ? `${item.month} ${item.year}` : ''}</td>
+<td class="font-semibold" style="color: #2563eb;">${item.asin}</td>
+<td class="text-right">${item.quantity}</td>
+<td class="text-right text-green">${formatCurrency(item.revenue)}</td>
+<td class="text-right">${formatCurrency(item.cost)}</td>
+<td class="text-right text-orange">${formatCurrency(item.adSpend)}</td>
+<td class="text-right ${item.profit >= 0 ? 'text-green' : 'text-red'} font-semibold">
+${formatCurrency(item.profit)}
+</td>
+<td class="text-right">
+<span class="badge ${item.marginPercent >= 20 ? 'badge-green' : item.marginPercent >= 10 ? 'badge-blue' : item.marginPercent >= 0 ? 'badge-yellow' : 'badge-red'}">
+${item.marginPercent.toFixed(1)}%
+</span>
+</td>
+<td class="text-right">
+<span class="badge ${item.roi >= 50 ? 'badge-green' : item.roi >= 25 ? 'badge-blue' : item.roi >= 0 ? 'badge-yellow' : 'badge-red'}">
+${item.roi.toFixed(1)}%
+</span>
+</td>
+</tr>
+`;
+}).join('')}
+</tbody>
+</table>
+</div>
+</div>
+`;
+}
+
+document.getElementById('asin-monthly-content').innerHTML = html;
+}
+
+// Export ASIN Monthly Data
+function exportAsinMonthlyData() {
+const data = getAsinMonthlyData();
+let csv = 'Month,Year,ASIN,Quantity,Revenue,Cost,Ad Spend,Profit,Margin %,ROI %\n';
+data.forEach(item => {
+csv += `${item.month},${item.year},${item.asin},${item.quantity},${item.revenue.toFixed(2)},${item.cost.toFixed(2)},${item.adSpend.toFixed(2)},${item.profit.toFixed(2)},${item.marginPercent.toFixed(2)},${item.roi.toFixed(2)}\n`;
+});
+const blob = new Blob([csv], { type: 'text/csv' });
+const url = window.URL.createObjectURL(blob);
+const a = document.createElement('a');
+a.href = url;
+a.download = `asin-monthly-${state.selectedVendor}.csv`;
+a.click();
+}
+
+function exportMonthlyPLData() {
+const data = getMonthlyProfitabilityEnhanced();
+let csv = 'Month,Year,Revenue,Cost,Ad Spend,Profit,Margin %,ROI %\n';
+data.forEach(m => {
+csv += `${m.month},${m.year},${m.revenue},${m.totalCost},${m.adSpend},${m.profit},${m.marginPercent.toFixed(2)},${m.roi.toFixed(2)}\n`;
+});
+const blob = new Blob([csv], { type: 'text/csv' });
+const url = window.URL.createObjectURL(blob);
+const a = document.createElement('a');
+a.href = url;
+a.download = `monthly-pl-${state.selectedVendor}.csv`;
+a.click();
+}
+
+function render() {
+switch (state.activeTab) {
+case 'dashboard':
+renderDashboard();
+break;
+case 'monthly-pl':
+renderMonthlyPL();
+break;
+case 'asin-monthly':
+renderAsinMonthly();
+break;
+case 'asin-master':
+renderAsinMaster();
+break;
+case 'df-invoice':
+renderDFInvoice();
+break;
+case 'fc-invoice':
+renderFCInvoice();
+break;
+case 'vret-cogs':
+renderVretCogs();
+break;
+case 'saved-invoices':
+renderSavedInvoices();
+break;
+case 'advertising':
+renderAdvertising();
+break;
+case 'roi-analysis':
+renderROIAnalysis();
+break;
+}
+}
+
+// Initialize
+loadData();
+render();
+
+// Auto-save every 30 seconds
+setInterval(saveData, 30000);
+
+// ENHANCED FUNCTIONS FOR DAILY/WEEKLY/MONTHLY ANALYTICS WITH AD SPEND
+
+// Get monthly profitability with ad spend integration
+function getMonthlyProfitabilityEnhanced() {
+const monthlyData = {};
+const currentInvoices = state.savedInvoices[state.selectedVendor] || [];
+
+currentInvoices.forEach(item => {
+if (!item.date) return;
+
+const date = parseDate(item.date);
+if (!date) return;
+const monthKey = `${date.getFullYear()}-${String(date.getMonth()).padStart(2, '0')}`;
+
+if (!monthlyData[monthKey]) {
+monthlyData[monthKey] = {
+year: date.getFullYear(),
+month: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][date.getMonth()],
+monthIndex: date.getMonth(),
+revenue: 0,
+totalCost: 0,
+adSpend: 0,
+profit: 0,
+quantity: 0,
+invoiceCount: 0
+};
+}
+
+const qty = parseFloat(item.quantity) || 0;
+const itemPrice = parseFloat(item.itemPrice) || 0;
+const asinCost = getAsinCost(item.asin);
+
+monthlyData[monthKey].revenue += qty * itemPrice;
+monthlyData[monthKey].totalCost += qty * asinCost;
+monthlyData[monthKey].quantity += qty;
+monthlyData[monthKey].invoiceCount += 1;
+});
+
+// Add ad spend for each month
+const ads = state.advertisingData[state.selectedVendor] || [];
+const vretCogsData = state.savedVretCogs[state.selectedVendor] || [];
+
+// Debug logging
+console.log('📊 Monthly P&L Debug:');
+console.log('Selected Vendor:', state.selectedVendor);
+console.log('VRET & COGS Data:', vretCogsData);
+console.log('Number of VRET & COGS entries:', vretCogsData.length);
+
+Object.keys(monthlyData).forEach(key => {
+const data = monthlyData[key];
+
+// Calculate ad spend
+data.adSpend = ads
+.filter(ad => {
+if (!ad.date) return false;
+const adDate = parseDate(ad.date);
+if (!adDate) return;
+return adDate.getFullYear() === data.year && adDate.getMonth() === data.monthIndex;
+})
+.reduce((sum, ad) => sum + (parseFloat(ad.spend) || 0), 0);
+
+// Get VRET & COGS for this month
+const monthStr = String(data.monthIndex + 1).padStart(2, '0'); // Convert 0-11 to 01-12
+const yearStr = String(data.year);
+
+console.log(`Looking for: Month=${monthStr}, Year=${yearStr}`);
+
+const vretCogsEntry = vretCogsData.find(vc => {
+const matches = vc.month === monthStr && vc.year === yearStr;
+if (vc.month === monthStr || vc.year === yearStr) {
+console.log(` Checking entry: month=${vc.month}, year=${vc.year}, matches=${matches}`);
+}
+return matches;
+});
+
+if (vretCogsEntry) {
+console.log(`✓ Found VRET & COGS for ${monthStr}/${yearStr}:`, vretCogsEntry);
+} else {
+console.log(`✗ No VRET & COGS found for ${monthStr}/${yearStr}`);
+}
+
+data.vret = vretCogsEntry ? (parseFloat(vretCogsEntry.vret) || 0) : 0;
+data.cogs = vretCogsEntry ? (parseFloat(vretCogsEntry.cogs) || 0) : 0;
+data.vretCogsCombined = data.vret + data.cogs;
+
+// Calculate profit (revenue - cost - adSpend)
+data.profit = data.revenue - data.totalCost - data.adSpend;
+
+// Calculate final profit (profit - vret - cogs)
+data.finalProfit = data.profit - data.vret - data.cogs;
+
+data.marginPercent = data.revenue > 0 ? (data.profit / data.revenue) * 100 : 0;
+data.finalMarginPercent = data.revenue > 0 ? (data.finalProfit / data.revenue) * 100 : 0;
+data.roi = (data.totalCost + data.adSpend) > 0 ? (data.profit / (data.totalCost + data.adSpend)) * 100 : 0;
+});
+
+return Object.values(monthlyData).sort((a, b) => {
+if (a.year !== b.year) return b.year - a.year;
+return b.monthIndex - a.monthIndex;
+});
+}
+
+// Get daily profitability
+function getDailyProfitability() {
+const today = new Date();
+today.setHours(0, 0, 0, 0);
+const tomorrow = new Date(today);
+tomorrow.setDate(tomorrow.getDate() + 1);
+
+const invoices = state.savedInvoices[state.selectedVendor] || [];
+const todayInvoices = invoices.filter(inv => {
+if (!inv.date) return false;
+const invDate = parseDate(inv.date);
+if (!invDate) return;
+return invDate >= today && invDate < tomorrow;
+});
+
+let revenue = 0, cost = 0;
+todayInvoices.forEach(item => {
+const qty = parseFloat(item.quantity) || 0;
+const itemPrice = parseFloat(item.itemPrice) || 0;
+const asinCost = getAsinCost(item.asin);
+revenue += qty * itemPrice;
+cost += qty * asinCost;
+});
+
+const ads = state.advertisingData[state.selectedVendor] || [];
+const adSpend = ads
+.filter(ad => {
+if (!ad.date) return false;
+const adDate = parseDate(ad.date);
+if (!adDate) return;
+return adDate >= today && adDate < tomorrow;
+})
+.reduce((sum, ad) => sum + (parseFloat(ad.spend) || 0), 0);
+
+const profit = revenue - cost - adSpend;
+
+return {
+revenue,
+cost,
+adSpend,
+profit,
+marginPercent: revenue > 0 ? (profit / revenue) * 100 : 0,
+invoiceCount: todayInvoices.length
+};
+}
+
+// Get yesterday's profitability
+function getYesterdayProfitability() {
+const yesterday = new Date();
+yesterday.setDate(yesterday.getDate() - 1);
+yesterday.setHours(0, 0, 0, 0);
+const today = new Date();
+today.setHours(0, 0, 0, 0);
+
+const invoices = state.savedInvoices[state.selectedVendor] || [];
+const yesterdayInvoices = invoices.filter(inv => {
+if (!inv.date) return false;
+const invDate = parseDate(inv.date);
+if (!invDate) return;
+return invDate >= yesterday && invDate < today;
+});
+
+let revenue = 0, cost = 0;
+yesterdayInvoices.forEach(item => {
+const qty = parseFloat(item.quantity) || 0;
+const itemPrice = parseFloat(item.itemPrice) || 0;
+const asinCost = getAsinCost(item.asin);
+revenue += qty * itemPrice;
+cost += qty * asinCost;
+});
+
+const ads = state.advertisingData[state.selectedVendor] || [];
+const adSpend = ads
+.filter(ad => {
+if (!ad.date) return false;
+const adDate = parseDate(ad.date);
+if (!adDate) return;
+return adDate >= yesterday && adDate < today;
+})
+.reduce((sum, ad) => sum + (parseFloat(ad.spend) || 0), 0);
+
+const profit = revenue - cost - adSpend;
+return { revenue, cost, adSpend, profit };
+}
+
+// Get weekly ASIN margins
+function getWeeklyAsinMargins() {
+const today = new Date();
+today.setHours(23, 59, 59, 999);
+const weekAgo = new Date(today);
+weekAgo.setDate(weekAgo.getDate() - 7);
+weekAgo.setHours(0, 0, 0, 0);
+
+const invoices = state.savedInvoices[state.selectedVendor] || [];
+const weekInvoices = invoices.filter(inv => {
+if (!inv.date) return false;
+const invDate = parseDate(inv.date);
+if (!invDate) return;
+return invDate >= weekAgo && invDate <= today;
+});
+
+const asinStats = {};
+weekInvoices.forEach(item => {
+if (!item.asin) return;
+
+if (!asinStats[item.asin]) {
+asinStats[item.asin] = {
+asin: item.asin,
+revenue: 0,
+cost: 0,
+adSpend: 0,
+quantity: 0
+};
+}
+
+const qty = parseFloat(item.quantity) || 0;
+const itemPrice = parseFloat(item.itemPrice) || 0;
+const asinCost = getAsinCost(item.asin);
+asinStats[item.asin].revenue += qty * itemPrice;
+asinStats[item.asin].cost += qty * asinCost;
+asinStats[item.asin].quantity += qty;
+});
+
+// Add ad spend for each ASIN
+const ads = state.advertisingData[state.selectedVendor] || [];
+Object.keys(asinStats).forEach(asin => {
+asinStats[asin].adSpend = ads
+.filter(ad => {
+if (!ad.date || ad.asin !== asin) return false;
+const adDate = parseDate(ad.date);
+if (!adDate) return;
+return adDate >= weekAgo && adDate <= today;
+})
+.reduce((sum, ad) => sum + (parseFloat(ad.spend) || 0), 0);
+});
+
+// Calculate margins
+const results = Object.values(asinStats).map(asin => {
+const profit = asin.revenue - asin.cost - asin.adSpend;
+const marginPercent = asin.revenue > 0 ? (profit / asin.revenue) * 100 : 0;
+return { ...asin, profit, marginPercent };
+});
+
+results.sort((a, b) => b.marginPercent - a.marginPercent);
+
+return {
+best: results.filter(r => r.marginPercent > 0 && r.quantity > 0).slice(0, 5),
+worst: results.filter(r => r.quantity > 0).slice(-5).reverse()
+};
+}
+
+// Delete advertising entry
+function deleteAdvertisingEntry(id) {
+if (confirm('Are you sure you want to delete this advertising entry?')) {
+state.advertisingData[state.selectedVendor] =
+state.advertisingData[state.selectedVendor].filter(ad => ad.id !== id);
+saveData();
+renderAdvertising();
+}
+}
+
+// Get last 5 days profit data
+
+
+// Render daily profit chart
+function renderDailyProfitChart(data) {
+const maxProfit = Math.max(...data.map(d => d.profit), 0);
+const minProfit = Math.min(...data.map(d => d.profit), 0);
+const range = maxProfit - minProfit;
+const chartHeight = 250;
+const padding = 20;
+
+let svg = `
+<svg width="100%" height="${chartHeight}" style="overflow: visible;">
+<!-- Zero line -->
+<line x1="60" y1="${padding + (maxProfit / range) * (chartHeight - 2 * padding)}"
+x2="100%" y2="${padding + (maxProfit / range) * (chartHeight - 2 * padding)}"
+stroke="#d1d5db" stroke-width="1" stroke-dasharray="4"/>
+`;
+
+const barWidth = 60;
+const spacing = 20;
+
+data.forEach((day, index) => {
+const x = 80 + index * (barWidth + spacing);
+const barHeight = Math.abs(day.profit / range) * (chartHeight - 2 * padding);
+const y = day.profit >= 0
+? padding + (maxProfit / range) * (chartHeight - 2 * padding) - barHeight
+: padding + (maxProfit / range) * (chartHeight - 2 * padding);
+const color = day.profit >= 0 ? '#16a34a' : '#dc2626';
+
+svg += `
+<rect x="${x}" y="${y}" width="${barWidth}" height="${barHeight}"
+fill="${color}" opacity="0.8" rx="4"/>
+<text x="${x + barWidth/2}" y="${chartHeight - 5}"
+text-anchor="middle" font-size="11" fill="#6b7280">${day.dateStr}</text>
+<text x="${x + barWidth/2}" y="${y - 5}"
+text-anchor="middle" font-size="11" font-weight="600" fill="${color}">₹${day.profit.toFixed(0)}</text>
+`;
+});
+
+svg += `</svg>`;
+return svg;
+}
+
+// Get top performing ASINs (last 7 days by total profit)
+function getTopPerformingAsins7Days() {
+const today = new Date();
+today.setHours(23, 59, 59, 999);
+const weekAgo = new Date(today);
+weekAgo.setDate(weekAgo.getDate() - 7);
+weekAgo.setHours(0, 0, 0, 0);
+
+const invoices = state.savedInvoices[state.selectedVendor] || [];
+const weekInvoices = invoices.filter(inv => {
+if (!inv.date) return false;
+const invDate = parseDate(inv.date);
+if (!invDate) return;
+return invDate >= weekAgo && invDate <= today;
+});
+
+const asinStats = {};
+weekInvoices.forEach(item => {
+if (!item.asin) return;
+
+if (!asinStats[item.asin]) {
+asinStats[item.asin] = {
+asin: item.asin,
+revenue: 0,
+cost: 0,
+adSpend: 0,
+quantity: 0
+};
+}
+
+const qty = parseFloat(item.quantity) || 0;
+const itemPrice = parseFloat(item.itemPrice) || 0;
+const asinCost = getAsinCost(item.asin);
+asinStats[item.asin].revenue += qty * itemPrice;
+asinStats[item.asin].cost += qty * asinCost;
+asinStats[item.asin].quantity += qty;
+});
+
+// Add ad spend for each ASIN
+const ads = state.advertisingData[state.selectedVendor] || [];
+Object.keys(asinStats).forEach(asin => {
+asinStats[asin].adSpend = ads
+.filter(ad => {
+if (!ad.date || ad.asin !== asin) return false;
+const adDate = parseDate(ad.date);
+if (!adDate) return;
+return adDate >= weekAgo && adDate <= today;
+})
+.reduce((sum, ad) => sum + (parseFloat(ad.spend) || 0), 0);
+});
+
+// Calculate profit and margin
+const results = Object.values(asinStats).map(asin => {
+const profit = asin.revenue - asin.cost - asin.adSpend;
+const marginPercent = asin.revenue > 0 ? (profit / asin.revenue) * 100 : 0;
+return { ...asin, profit, marginPercent };
+});
+
+// Sort by profit (descending) and return top 10
+return results.sort((a, b) => b.profit - a.profit).slice(0, 10);
+}
+
+// Get low performing ASINs (last 7 days by total profit)
+function getLowPerformingAsins7Days() {
+const today = new Date();
+today.setHours(23, 59, 59, 999);
+const weekAgo = new Date(today);
+weekAgo.setDate(weekAgo.getDate() - 7);
+weekAgo.setHours(0, 0, 0, 0);
+
+const invoices = state.savedInvoices[state.selectedVendor] || [];
+const weekInvoices = invoices.filter(inv => {
+if (!inv.date) return false;
+const invDate = parseDate(inv.date);
+if (!invDate) return;
+return invDate >= weekAgo && invDate <= today;
+});
+
+const asinStats = {};
+weekInvoices.forEach(item => {
+if (!item.asin) return;
+
+if (!asinStats[item.asin]) {
+asinStats[item.asin] = {
+asin: item.asin,
+revenue: 0,
+cost: 0,
+adSpend: 0,
+quantity: 0
+};
+}
+
+const qty = parseFloat(item.quantity) || 0;
+const itemPrice = parseFloat(item.itemPrice) || 0;
+const asinCost = getAsinCost(item.asin);
+asinStats[item.asin].revenue += qty * itemPrice;
+asinStats[item.asin].cost += qty * asinCost;
+asinStats[item.asin].quantity += qty;
+});
+
+// Add ad spend for each ASIN
+const ads = state.advertisingData[state.selectedVendor] || [];
+Object.keys(asinStats).forEach(asin => {
+asinStats[asin].adSpend = ads
+.filter(ad => {
+if (!ad.date || ad.asin !== asin) return false;
+const adDate = parseDate(ad.date);
+if (!adDate) return;
+return adDate >= weekAgo && adDate <= today;
+})
+.reduce((sum, ad) => sum + (parseFloat(ad.spend) || 0), 0);
+});
+
+// Calculate profit and margin
+const results = Object.values(asinStats).map(asin => {
+const profit = asin.revenue - asin.cost - asin.adSpend;
+const marginPercent = asin.revenue > 0 ? (profit / asin.revenue) * 100 : 0;
+return { ...asin, profit, marginPercent };
+});
+
+// Sort by profit (ascending) and return bottom 10
+return results.sort((a, b) => a.profit - b.profit).slice(0, 10);
+}
+
+
+// Get last 5 days profit data
+function getLast5DaysProfit() {
+const results = [];
+const invoices = state.savedInvoices[state.selectedVendor] || [];
+const ads = state.advertisingData[state.selectedVendor] || [];
+
+// Get today's date at midnight (or override for testing)
+const today = state.dateOverride ? new Date(state.dateOverride) : new Date();
+today.setHours(0, 0, 0, 0);
+console.log('📅 Calculating last 5 days from today:', today.toLocaleDateString('en-GB'));
+if (state.dateOverride) {
+console.log('⚠️ Using override date for testing');
+}
+
+// Loop through last 5 days (4 days ago to today)
+for (let i = 4; i >= 0; i--) {
+const date = new Date(today);
+date.setDate(today.getDate() - i);
+date.setHours(0, 0, 0, 0);
+const nextDate = new Date(date);
+nextDate.setDate(nextDate.getDate() + 1);
+
+const dayInvoices = invoices.filter(inv => {
+if (!inv.date) return false;
+const invDate = parseDate(inv.date);
+if (!invDate) return;
+return invDate >= date && invDate < nextDate;
+});
+
+let revenue = 0, cost = 0;
+dayInvoices.forEach(item => {
+const qty = parseFloat(item.quantity) || 0;
+const itemPrice = parseFloat(item.itemPrice) || 0;
+const asinCost = getAsinCost(item.asin);
+revenue += qty * itemPrice;
+cost += qty * asinCost;
+});
+
+const adSpend = ads
+.filter(ad => {
+if (!ad.date) return false;
+const adDate = parseDate(ad.date);
+if (!adDate) return;
+return adDate >= date && adDate < nextDate;
+})
+.reduce((sum, ad) => sum + (parseFloat(ad.spend) || 0), 0);
+
+const profit = revenue - cost - adSpend;
+const marginPercent = revenue > 0 ? (profit / revenue) * 100 : 0;
+
+results.push({
+date: new Date(date),
+dateStr: date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }),
+revenue,
+cost,
+adSpend,
+profit,
+marginPercent
+});
+}
+
+console.log('📊 Last 5 days calculated:', results.map(r => r.dateStr).join(', '));
+return results; // Already in correct order (oldest to newest)
+}
+
+// Render daily profit chart
+function renderDailyProfitChart(data) {
+const maxProfit = Math.max(...data.map(d => d.profit), 0);
+const minProfit = Math.min(...data.map(d => d.profit), 0);
+const range = Math.max(maxProfit - minProfit, 1);
+const chartHeight = 250;
+const padding = 20;
+
+let svg = `
+<svg width="100%" height="${chartHeight}" style="overflow: visible;">
+<!-- Zero line -->
+<line x1="60" y1="${padding + (maxProfit / range) * (chartHeight - 2 * padding)}"
+x2="100%" y2="${padding + (maxProfit / range) * (chartHeight - 2 * padding)}"
+stroke="#d1d5db" stroke-width="1" stroke-dasharray="4"/>
+`;
+
+const barWidth = 60;
+const spacing = 20;
+
+data.forEach((day, index) => {
+const x = 80 + index * (barWidth + spacing);
+const barHeight = Math.abs(day.profit / range) * (chartHeight - 2 * padding);
+const y = day.profit >= 0
+? padding + (maxProfit / range) * (chartHeight - 2 * padding) - barHeight
+: padding + (maxProfit / range) * (chartHeight - 2 * padding);
+const color = day.profit >= 0 ? '#16a34a' : '#dc2626';
+
+svg += `
+<rect x="${x}" y="${y}" width="${barWidth}" height="${barHeight}"
+fill="${color}" opacity="0.8" rx="4"/>
+<text x="${x + barWidth/2}" y="${chartHeight - 5}"
+text-anchor="middle" font-size="11" fill="#6b7280">${day.dateStr}</text>
+<text x="${x + barWidth/2}" y="${y - 5}"
+text-anchor="middle" font-size="11" font-weight="600" fill="${color}">₹${day.profit.toFixed(0)}</text>
+`;
+});
+
+svg += `</svg>`;
+return svg;
+}
+
+// Get top performing ASINs (last 7 days by total profit)
+function getTopPerformingAsins7Days() {
+const today = new Date();
+today.setHours(23, 59, 59, 999);
+const weekAgo = new Date(today);
+weekAgo.setDate(weekAgo.getDate() - 7);
+weekAgo.setHours(0, 0, 0, 0);
+
+const invoices = state.savedInvoices[state.selectedVendor] || [];
+const weekInvoices = invoices.filter(inv => {
+if (!inv.date) return false;
+const invDate = parseDate(inv.date);
+if (!invDate) return;
+return invDate >= weekAgo && invDate <= today;
+});
+
+const asinStats = {};
+weekInvoices.forEach(item => {
+if (!item.asin) return;
+
+if (!asinStats[item.asin]) {
+asinStats[item.asin] = {
+asin: item.asin,
+revenue: 0,
+cost: 0,
+adSpend: 0,
+quantity: 0
+};
+}
+
+const qty = parseFloat(item.quantity) || 0;
+const itemPrice = parseFloat(item.itemPrice) || 0;
+const asinCost = getAsinCost(item.asin);
+asinStats[item.asin].revenue += qty * itemPrice;
+asinStats[item.asin].cost += qty * asinCost;
+asinStats[item.asin].quantity += qty;
+});
+
+// Add ad spend for each ASIN
+const ads = state.advertisingData[state.selectedVendor] || [];
+Object.keys(asinStats).forEach(asin => {
+asinStats[asin].adSpend = ads
+.filter(ad => {
+if (!ad.date || ad.asin !== asin) return false;
+const adDate = parseDate(ad.date);
+if (!adDate) return;
+return adDate >= weekAgo && adDate <= today;
+})
+.reduce((sum, ad) => sum + (parseFloat(ad.spend) || 0), 0);
+});
+
+// Calculate profit and margin
+const results = Object.values(asinStats).map(asin => {
+const profit = asin.revenue - asin.cost - asin.adSpend;
+const marginPercent = asin.revenue > 0 ? (profit / asin.revenue) * 100 : 0;
+return { ...asin, profit, marginPercent };
+});
+
+// Sort by profit (descending) and return top 10
+return results.sort((a, b) => b.profit - a.profit).slice(0, 10);
+}
+
+// Get low performing ASINs (last 7 days by total profit)
+function getLowPerformingAsins7Days() {
+const today = new Date();
+today.setHours(23, 59, 59, 999);
+const weekAgo = new Date(today);
+weekAgo.setDate(weekAgo.getDate() - 7);
+weekAgo.setHours(0, 0, 0, 0);
+
+const invoices = state.savedInvoices[state.selectedVendor] || [];
+const weekInvoices = invoices.filter(inv => {
+if (!inv.date) return false;
+const invDate = parseDate(inv.date);
+if (!invDate) return;
+return invDate >= weekAgo && invDate <= today;
+});
+
+const asinStats = {};
+weekInvoices.forEach(item => {
+if (!item.asin) return;
+
+if (!asinStats[item.asin]) {
+asinStats[item.asin] = {
+asin: item.asin,
+revenue: 0,
+cost: 0,
+adSpend: 0,
+quantity: 0
+};
+}
+
+const qty = parseFloat(item.quantity) || 0;
+const itemPrice = parseFloat(item.itemPrice) || 0;
+const asinCost = getAsinCost(item.asin);
+asinStats[item.asin].revenue += qty * itemPrice;
+asinStats[item.asin].cost += qty * asinCost;
+asinStats[item.asin].quantity += qty;
+});
+
+// Add ad spend for each ASIN
+const ads = state.advertisingData[state.selectedVendor] || [];
+Object.keys(asinStats).forEach(asin => {
+asinStats[asin].adSpend = ads
+.filter(ad => {
+if (!ad.date || ad.asin !== asin) return false;
+const adDate = parseDate(ad.date);
+if (!adDate) return;
+return adDate >= weekAgo && adDate <= today;
+})
+.reduce((sum, ad) => sum + (parseFloat(ad.spend) || 0), 0);
+});
+
+// Calculate profit and margin
+const results = Object.values(asinStats).map(asin => {
+const profit = asin.revenue - asin.cost - asin.adSpend;
+const marginPercent = asin.revenue > 0 ? (profit / asin.revenue) * 100 : 0;
+return { ...asin, profit, marginPercent };
+});
+
+// Sort by profit (ascending) and return bottom 10
+return results.sort((a, b) => a.profit - b.profit).slice(0, 10);
+}
+
+
+// Date override functions for testing
+function applyDateOverride() {
+const input = document.getElementById('dateOverride');
+if (input.value) {
+state.dateOverride = input.value;
+console.log('🔧 Date override applied:', input.value);
+renderCurrentTab();
+}
+}
+
+function clearDateOverride() {
+state.dateOverride = null;
+document.getElementById('dateOverride').value = '';
+console.log('✅ Date override cleared - using real date');
+renderCurrentTab();
+}
+
+// Notification system
+function showNotification(message, type = 'info') {
+const toast = document.createElement('div');
+toast.className = `notification-toast ${type}`;
+
+const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
+toast.innerHTML = `
+<div style="font-size: 1.25rem;">${icon}</div>
+<div style="flex: 1; font-size: 0.875rem; font-weight: 500;">${message}</div>
+`;
+
+document.body.appendChild(toast);
+
+setTimeout(() => {
+toast.style.animation = 'slideIn 0.3s ease-out reverse';
+setTimeout(() => toast.remove(), 300);
+}, 3000);
+}
+
+// Update advertising field
+function updateAdField(index, field, value) {
+if (!state.advertisingData[state.selectedVendor]) return;
+
+if (state.advertisingData[state.selectedVendor][index]) {
+state.advertisingData[state.selectedVendor][index][field] = value;
+saveData();
+console.log(`✓ Updated ad entry ${index}: ${field} = ${value}`);
+
+// Re-render to update calculated fields (ROAS, ACOS)
+setTimeout(() => renderAdvertising(), 100);
+}
+}
+
+// Delete single advertising entry
+function deleteAdEntry(index) {
+if (!state.advertisingData[state.selectedVendor]) return;
+
+const ad = state.advertisingData[state.selectedVendor][index];
+if (!ad) {
+console.error('Ad entry not found at index:', index);
+showNotification('Error: Entry not found!', 'error');
+return;
+}
+
+if (confirm(`Delete advertising entry for ASIN ${ad.asin} on ${ad.date || 'N/A'}?`)) {
+state.advertisingData[state.selectedVendor].splice(index, 1);
+saveData();
+console.log(`🗑️ Deleted ad entry ${index}`);
+renderAdvertising();
+showNotification('Advertising entry deleted successfully!', 'success');
+}
+}
+
+// Delete by date modal
+function showDeleteByDateModal() {
+const dates = [...new Set(state.advertisingData[state.selectedVendor]?.map(ad => ad.date).filter(d => d))].sort();
+
+if (dates.length === 0) {
+alert('No dates found in advertising data');
+return;
+}
+
+const dateOptions = dates.map(date => `<option value="${date}">${date}</option>`).join('');
+const html = `
+<div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;" id="delete-date-modal" onclick="if(event.target.id === 'delete-date-modal') this.remove()">
+<div style="background: white; padding: 2rem; border-radius: 0.75rem; max-width: 400px; width: 90%;" onclick="event.stopPropagation()">
+<h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;">Delete Advertising Data by Date</h3>
+<p style="color: #6b7280; margin-bottom: 1rem;">Select a date to delete all advertising entries for that date:</p>
+<select id="date-to-delete" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.5rem; margin-bottom: 1rem;">
+${dateOptions}
+</select>
+<div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+<button class="btn btn-gray" onclick="document.getElementById('delete-date-modal').remove()">Cancel</button>
+<button class="btn btn-red" onclick="deleteAdvertisingByDate()">🗑️ Delete Date</button>
+</div>
+</div>
+</div>
+`;
+document.body.insertAdjacentHTML('beforeend', html);
+}
+
+// Delete advertising data by date
+function deleteAdvertisingByDate() {
+const dateSelect = document.getElementById('date-to-delete');
+const dateToDelete = dateSelect.value;
+
+if (!dateToDelete) {
+alert('Please select a date');
+return;
+}
+
+const countBefore = state.advertisingData[state.selectedVendor]?.length || 0;
+state.advertisingData[state.selectedVendor] = state.advertisingData[state.selectedVendor]?.filter(ad => ad.date !== dateToDelete) || [];
+const countAfter = state.advertisingData[state.selectedVendor].length;
+const deleted = countBefore - countAfter;
+
+saveData();
+document.getElementById('delete-date-modal').remove();
+renderAdvertising();
+
+showNotification(`Deleted ${deleted} advertising entries for ${dateToDelete}`, 'success');
+console.log(`🗑️ Deleted ${deleted} entries for date: ${dateToDelete}`);
+}
+
+// Clear all advertising data
+function clearAllAdvertisingData() {
+const count = state.advertisingData[state.selectedVendor]?.length || 0;
+
+if (count === 0) {
+alert('No advertising data to delete');
+return;
+}
+
+if (confirm(`⚠️ Are you sure you want to delete ALL ${count} advertising entries for ${state.selectedVendor}?\n\nThis action cannot be undone!`)) {
+state.advertisingData[state.selectedVendor] = [];
+saveData();
+renderAdvertising();
+showNotification('All advertising data cleared!', 'success');
+console.log(`🗑️ Cleared all advertising data for ${state.selectedVendor}`);
+}
+}
+
+// Search/Filter Functions with improved error handling
+
+// Filter Saved Invoices
+function filterSavedInvoices() {
+try {
+const searchInput = document.getElementById('search-saved-invoices');
+if (!searchInput) {
+console.log('Search input not found');
+return;
+}
+
+const searchTerm = searchInput.value.toLowerCase();
+const table = document.getElementById('saved-invoices-table');
+
+if (!table) {
+console.log('Saved invoices table not found');
+return;
+}
+
+const tbody = table.getElementsByTagName('tbody')[0];
+if (!tbody) {
+console.log('Table body not found');
+return;
+}
+
+const rows = tbody.getElementsByTagName('tr');
+let visibleCount = 0;
+
+for (let i = 0; i < rows.length; i++) {
+const row = rows[i];
+
+// Get both input values AND text content
+const inputs = row.getElementsByTagName('input');
+let searchableText = '';
+
+// Add input values
+for (let j = 0; j < inputs.length; j++) {
+searchableText += (inputs[j].value || '') + ' ';
+}
+
+// Add text content from table cells
+searchableText += row.textContent || '';
+searchableText = searchableText.toLowerCase();
+
+if (searchableText.includes(searchTerm)) {
+row.style.display = '';
+visibleCount++;
+} else {
+row.style.display = 'none';
+}
+}
+
+// Show filter info
+let filterInfo = table.parentElement.parentElement.querySelector('.filter-info');
+if (!filterInfo) {
+filterInfo = document.createElement('div');
+filterInfo.className = 'filter-info';
+table.parentElement.parentElement.insertBefore(filterInfo, table.parentElement.nextSibling);
+}
+
+if (searchTerm) {
+filterInfo.textContent = `Showing ${visibleCount} of ${rows.length} invoices`;
+filterInfo.style.display = 'block';
+} else {
+filterInfo.style.display = 'none';
+}
+} catch (error) {
+console.error('Error in filterSavedInvoices:', error);
+}
+}
+
+// Filter Advertising Data
+function filterAdvertising() {
+try {
+const searchInput = document.getElementById('search-advertising');
+if (!searchInput) {
+console.log('Advertising search input not found');
+return;
+}
+
+const searchTerm = searchInput.value.toLowerCase();
+const table = document.getElementById('advertising-table');
+
+if (!table) {
+console.log('Advertising table not found');
+return;
+}
+
+const tbody = table.getElementsByTagName('tbody')[0];
+if (!tbody) {
+console.log('Advertising table body not found');
+return;
+}
+
+const rows = tbody.getElementsByTagName('tr');
+let visibleCount = 0;
+
+for (let i = 0; i < rows.length; i++) {
+const row = rows[i];
+
+// Get both input values AND text content
+const inputs = row.getElementsByTagName('input');
+let searchableText = '';
+
+// Add input values
+for (let j = 0; j < inputs.length; j++) {
+searchableText += (inputs[j].value || '') + ' ';
+}
+
+// Add text content from table cells
+searchableText += row.textContent || '';
+searchableText = searchableText.toLowerCase();
+
+if (searchableText.includes(searchTerm)) {
+row.style.display = '';
+visibleCount++;
+} else {
+row.style.display = 'none';
+}
+}
+
+// Show filter info
+let filterInfo = table.parentElement.parentElement.querySelector('.filter-info');
+if (!filterInfo) {
+filterInfo = document.createElement('div');
+filterInfo.className = 'filter-info';
+table.parentElement.parentElement.insertBefore(filterInfo, table.parentElement.nextSibling);
+}
+
+if (searchTerm) {
+filterInfo.textContent = `Showing ${visibleCount} of ${rows.length} entries`;
+filterInfo.style.display = 'block';
+} else {
+filterInfo.style.display = 'none';
+}
+} catch (error) {
+console.error('Error in filterAdvertising:', error);
+}
+}
+
+// Filter ASIN Master
+function filterAsinMaster() {
+try {
+const searchInput = document.getElementById('search-asin-master');
+if (!searchInput) {
+console.error('❌ ASIN Master search input not found');
+return;
+}
+
+const searchTerm = searchInput.value.toLowerCase();
+console.log(`🔍 ASIN Master search: "${searchTerm}"`);
+
+// Store search term to persist across re-renders
+if (!state.searchTerms) state.searchTerms = {};
+state.searchTerms.asinMaster = searchInput.value;
+
+const table = document.getElementById('asin-master-table');
+
+if (!table) {
+console.error('❌ ASIN Master table not found');
+return;
+}
+
+const tbody = table.getElementsByTagName('tbody')[0];
+if (!tbody) {
+console.log('ASIN Master table body not found');
+return;
+}
+
+const rows = tbody.getElementsByTagName('tr');
+let visibleCount = 0;
+
+for (let i = 0; i < rows.length; i++) {
+const row = rows[i];
+
+// Get actual input values instead of textContent
+const inputs = row.getElementsByTagName('input');
+let searchableText = '';
+for (let j = 0; j < inputs.length; j++) {
+searchableText += (inputs[j].value || '') + ' ';
+}
+searchableText = searchableText.toLowerCase();
+
+if (searchableText.includes(searchTerm)) {
+row.style.display = '';
+visibleCount++;
+} else {
+row.style.display = 'none';
+}
+}
+
+console.log(`✅ ASIN Master filter complete: ${visibleCount} of ${rows.length} rows visible`);
+
+// Update the count display
+const countDiv = table.parentElement.parentElement.querySelector('.text-gray');
+if (countDiv && searchTerm) {
+countDiv.textContent = `Showing ${visibleCount} of ${rows.length} entries (filtered)`;
+} else if (countDiv) {
+countDiv.textContent = `Total entries: ${rows.length}`;
+}
+} catch (error) {
+console.error('❌ Error in filterAsinMaster:', error);
+console.error(error.stack);
+}
+}
+
+// Generic filter function for dashboard tables
+function filterDashboardTable(searchInputId, tableId) {
+try {
+const searchInput = document.getElementById(searchInputId);
+if (!searchInput) {
+console.log(`Search input ${searchInputId} not found`);
+return;
+}
+
+const searchTerm = searchInput.value.toLowerCase();
+const table = document.getElementById(tableId);
+
+if (!table) {
+console.log(`Table ${tableId} not found`);
+return;
+}
+
+const tbody = table.getElementsByTagName('tbody')[0];
+if (!tbody) {
+console.log(`Table body not found for ${tableId}`);
+return;
+}
+
+const rows = tbody.getElementsByTagName('tr');
+let visibleCount = 0;
+
+for (let i = 0; i < rows.length; i++) {
+const row = rows[i];
+
+// Get both input values AND text content
+const inputs = row.getElementsByTagName('input');
+let searchableText = '';
+
+// Add input values
+for (let j = 0; j < inputs.length; j++) {
+searchableText += (inputs[j].value || '') + ' ';
+}
+
+// Add text content from table cells
+searchableText += row.textContent || '';
+searchableText = searchableText.toLowerCase();
+
+if (searchableText.includes(searchTerm)) {
+row.style.display = '';
+visibleCount++;
+} else {
+row.style.display = 'none';
+}
+}
+
+console.log(`${tableId}: Showing ${visibleCount} of ${rows.length} rows`);
+} catch (error) {
+console.error(`Error in filterDashboardTable for ${tableId}:`, error);
+}
+}
+
+// Diagnostic function to test all search functionality
+window.testSearchBoxes = function() {
+console.log('🔍 Testing Search Functionality...');
+console.log('=====================================');
+
+const searchBoxes = [
+{ id: 'search-asin-master', name: 'ASIN Master', tableId: 'asin-master-table' },
+{ id: 'search-saved-invoices', name: 'Saved Invoices', tableId: 'saved-invoices-table' },
+{ id: 'search-advertising', name: 'Advertising', tableId: 'advertising-table' },
+{ id: 'search-top-asins', name: 'Top Performing ASINs', tableId: 'top-asins-table' },
+{ id: 'search-low-asins', name: 'Low Performing ASINs', tableId: 'low-asins-table' },
+{ id: 'search-top-ad-spend', name: 'Top Ad Spend', tableId: 'top-ad-spend-table' }
+];
+
+searchBoxes.forEach(box => {
+const input = document.getElementById(box.id);
+const table = document.getElementById(box.tableId);
+
+console.log(`\n📊 ${box.name}:`);
+console.log(` Search Input: ${input ? '✅ Found' : '❌ Not Found'}`);
+console.log(` Table: ${table ? '✅ Found' : '❌ Not Found'}`);
+
+if (table) {
+const tbody = table.getElementsByTagName('tbody')[0];
+const rows = tbody ? tbody.getElementsByTagName('tr').length : 0;
+console.log(` Rows: ${rows}`);
+}
+});
+
+console.log('\n=====================================');
+console.log('💡 Tip: If search input is found but table is not, that tab might not be active or data not loaded yet.');
+};
+
+// Test ASIN Master search specifically
+window.testAsinMasterSearch = function() {
+console.log('\n🔍 Testing ASIN Master Search...');
+console.log('===================================');
+
+const searchInput = document.getElementById('search-asin-master');
+const table = document.getElementById('asin-master-table');
+
+console.log('1. Search Input:', searchInput ? '✅ Found' : '❌ Not Found');
+console.log('2. Table:', table ? '✅ Found' : '❌ Not Found');
+
+if (table) {
+const tbody = table.getElementsByTagName('tbody')[0];
+const rows = tbody ? tbody.getElementsByTagName('tr').length : 0;
+console.log('3. Table Rows:', rows);
+}
+
+if (searchInput && table) {
+console.log('\n🧪 Running Test...');
+searchInput.value = 'B07';
+filterAsinMaster();
+console.log('✅ Test complete - check the table above');
+} else {
+console.log('\n❌ Cannot run test - elements not found');
+console.log('💡 Make sure you are on the ASIN Master tab');
+}
+};
+
+// Google Sheets Integration Functions
+
+function showGoogleSheetsGuide() {
+const modal = `
+<div class="modal-overlay" onclick="if(event.target === this) this.remove()">
+<div class="modal" onclick="event.stopPropagation()">
+<div class="modal-header">
+<h2 class="modal-title">📊 Google Sheets Integration</h2>
+<button class="close-btn" onclick="this.closest('.modal-overlay').remove()">×</button>
+</div>
+
+<div style="margin-bottom: 1.5rem;">
+<h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 0.75rem; color: var(--gray-900);">
+✨ Easy 3-Step Setup
+</h3>
+<p style="color: var(--gray-600); font-size: 0.9375rem; line-height: 1.6;">
+Export your data to CSV and import it into Google Sheets. Your data will be stored in the cloud and accessible from anywhere!
+</p>
+</div>
+
+<div style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); padding: 1.5rem; border-radius: var(--radius); margin-bottom: 1.5rem; border-left: 4px solid var(--primary);">
+<h4 style="font-weight: 700; margin-bottom: 1rem; color: var(--gray-900);">📋 Step 1: Export Your Data</h4>
+<p style="margin-bottom: 1rem; color: var(--gray-700); font-size: 0.875rem;">Click the buttons below to export your data as CSV files:</p>
+<div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+<button class="btn btn-primary" onclick="exportAllDataToCSV()">📥 Export All Data</button>
+<button class="btn btn-purple" onclick="exportAsinMaster()">Export ASIN Master</button>
+<button class="btn btn-success" onclick="exportInvoices()">Export Invoices</button>
+<button class="btn btn-gray" onclick="exportAdvertising()">Export Advertising</button>
+</div>
+</div>
+
+<div style="background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); padding: 1.5rem; border-radius: var(--radius); margin-bottom: 1.5rem; border-left: 4px solid var(--success);">
+<h4 style="font-weight: 700; margin-bottom: 1rem; color: var(--gray-900);">📊 Step 2: Import to Google Sheets</h4>
+<ol style="margin-left: 1.25rem; color: var(--gray-700); font-size: 0.875rem; line-height: 1.8;">
+<li>Go to <a href="https://sheets.google.com" target="_blank" style="color: var(--primary); font-weight: 600;">sheets.google.com</a></li>
+<li>Click <strong>"Blank"</strong> to create a new spreadsheet</li>
+<li>Click <strong>File → Import → Upload</strong></li>
+<li>Drag and drop your CSV file or click "Browse"</li>
+<li>Select <strong>"Replace spreadsheet"</strong> and click <strong>"Import data"</strong></li>
+<li>Repeat for each CSV file (create separate sheets)</li>
+</ol>
+</div>
+
+<div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); padding: 1.5rem; border-radius: var(--radius); margin-bottom: 1.5rem; border-left: 4px solid var(--warning);">
+<h4 style="font-weight: 700; margin-bottom: 1rem; color: var(--gray-900);">🔄 Step 3: Keep Data in Sync</h4>
+<ul style="margin-left: 1.25rem; color: var(--gray-700); font-size: 0.875rem; line-height: 1.8;">
+<li><strong>Export regularly:</strong> Click "Export All Data" weekly</li>
+<li><strong>Import updates:</strong> Use the CSV import in each tab</li>
+<li><strong>Backup:</strong> Your Google Sheets is automatically backed up</li>
+<li><strong>Share:</strong> Share your Google Sheet with team members</li>
+</ul>
+</div>
+
+<div style="background: var(--gray-50); padding: 1.5rem; border-radius: var(--radius); margin-bottom: 1rem;">
+<h4 style="font-weight: 700; margin-bottom: 1rem; color: var(--gray-900);">💡 Pro Tips</h4>
+<ul style="margin-left: 1.25rem; color: var(--gray-600); font-size: 0.875rem; line-height: 1.8;">
+<li>Create one Google Sheet with multiple tabs (ASIN Master, Invoices, Advertising)</li>
+<li>Use Google Sheets formulas for additional analysis</li>
+<li>Set up Google Sheets notifications for changes</li>
+<li>Export after major updates to keep backup current</li>
+<li>Download CSV from Google Sheets to import back into this software</li>
+</ul>
+</div>
+
+<div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+<button class="btn btn-gray" onclick="this.closest('.modal-overlay').remove()">Close</button>
+<button class="btn btn-primary" onclick="exportAllDataToCSV()">📥 Export All Data Now</button>
+</div>
+</div>
+</div>
+`;
+document.body.insertAdjacentHTML('beforeend', modal);
+}
+
+// Export all data to multiple CSV files
+function exportAllDataToCSV() {
+exportAsinMaster();
+setTimeout(() => exportInvoices(), 300);
+setTimeout(() => exportAdvertising(), 600);
+showNotification('✅ Exporting all data! Check your downloads folder.', 'success');
+}
+
+// Export ASIN Master
+function exportAsinMaster() {
+const data = state.asinData[state.selectedVendor] || [];
+if (data.length === 0) {
+showNotification('⚠️ No ASIN data to export', 'error');
+return;
+}
+
+let csv = 'ASIN,Price\n';
+data.forEach(item => {
+if (item.asin && item.asin.trim()) {
+csv += `"${item.asin}","${item.price || ''}"\n`;
+}
+});
+
+downloadCSV(csv, `ASIN_Master_${state.selectedVendor}_${getDateStamp()}.csv`);
+console.log(`✓ Exported ${data.length} ASIN entries`);
+}
+
+// Export Invoices
+function exportInvoices() {
+const data = state.savedInvoices[state.selectedVendor] || [];
+if (data.length === 0) {
+showNotification('⚠️ No invoice data to export', 'error');
+return;
+}
+
+let csv = 'Date,Invoice ID,ASIN,Quantity,Item Price,Freight Cost\n';
+data.forEach(item => {
+csv += `"${item.date || ''}","${item.invoiceId || ''}","${item.asin || ''}","${item.quantity || ''}","${item.itemPrice || ''}","${state.freightCosts[state.selectedVendor]?.[item.invoiceId] || ''}"\n`;
+});
+
+downloadCSV(csv, `Invoices_${state.selectedVendor}_${getDateStamp()}.csv`);
+console.log(`✓ Exported ${data.length} invoice entries`);
+}
+
+// Export Advertising
+function exportAdvertising() {
+const data = state.advertisingData[state.selectedVendor] || [];
+if (data.length === 0) {
+showNotification('⚠️ No advertising data to export', 'error');
+return;
+}
+
+let csv = 'Date,ASIN,Spend,Sales,Orders,Clicks,Impressions\n';
+data.forEach(item => {
+csv += `"${item.date || ''}","${item.asin || ''}","${item.spend || ''}","${item.sales || ''}","${item.orders || ''}","${item.clicks || ''}","${item.impressions || ''}"\n`;
+});
+
+downloadCSV(csv, `Advertising_${state.selectedVendor}_${getDateStamp()}.csv`);
+console.log(`✓ Exported ${data.length} advertising entries`);
+}
+
+// Helper function to download CSV
+function downloadCSV(csvContent, filename) {
+const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+const url = window.URL.createObjectURL(blob);
+const link = document.createElement('a');
+link.href = url;
+link.download = filename;
+link.style.display = 'none';
+document.body.appendChild(link);
+link.click();
+document.body.removeChild(link);
+window.URL.revokeObjectURL(url);
+}
+
+// Get date stamp for filenames
+function getDateStamp() {
+const now = new Date();
+return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
+
+console.log('✓ Enhanced functions loaded');
+console.log('✓ Google Sheets export ready');
+console.log('💡 Type testSearchBoxes() in console to check all search functionality');
+console.log('💡 Type testAsinMasterSearch() to specifically test ASIN Master search');
+console.log('✓ Last 5 days profit tracking ready');
+console.log('✓ Top/Low performing ASINs (7 days) ready');
+console.log('✓ Daily/Weekly/Monthly analytics ready');
+console.log('✓ Ad spend integration complete');
+console.log('✓ Last 5 days profit tracking ready');
+console.log('✓ Top/Low performing ASINs (7 days) ready');
+
+// ================================================
+// SUPABASE DATABASE INTEGRATION
+// ================================================
+
+// Initialize Supabase Client
+const supabaseUrl = 'https://oqjcbjgidnybvvzecrhg.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xamNiamdpZG55YnZ2emVjcmhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI0MTA2NzMsImV4cCI6MjA3Nzk4NjY3M30.gNC-L__uk2DxFb-29hYmE-O_WDqSTyr0TawF8AK08k0';
+const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+console.log('✅ Supabase client initialized');
+
+// ================================================
+// AUTHENTICATION FUNCTIONS
+// ================================================
+
+let currentUser = null;
+
+// Show/Hide Auth Forms
+function showLogin() {
+document.getElementById('loginForm').style.display = 'block';
+document.getElementById('signupForm').style.display = 'none';
+clearAuthMessage();
+}
+
+function showSignup() {
+document.getElementById('loginForm').style.display = 'none';
+document.getElementById('signupForm').style.display = 'block';
+clearAuthMessage();
+}
+
+// Display Messages
+function showAuthMessage(message, type) {
+const msgDiv = document.getElementById('authMessage');
+msgDiv.textContent = message;
+msgDiv.className = `auth-message ${type}`;
+}
+
+function clearAuthMessage() {
+const msgDiv = document.getElementById('authMessage');
+msgDiv.className = 'auth-message';
+msgDiv.textContent = '';
+}
+
+// Handle Login
+async function handleLogin() {
+const email = document.getElementById('loginEmail').value.trim();
+const password = document.getElementById('loginPassword').value;
+
+if (!email || !password) {
+showAuthMessage('Please enter email and password', 'error');
+return;
+}
+
+showAuthMessage('Logging in...', 'info');
+
+try {
+const { data, error } = await supabase.auth.signInWithPassword({
+email: email,
+password: password
+});
+
+if (error) throw error;
+
+currentUser = data.user;
+console.log('✅ Login successful:', currentUser.email);
+
+// Show main app, hide auth
+document.getElementById('authContainer').style.display = 'none';
+document.getElementById('appContainer').style.display = 'block';
+document.getElementById('userEmail').textContent = currentUser.email;
+
+// Load user's data
+await SupabaseDB.loadAllData();
+render();
+
+} catch (error) {
+console.error('Login error:', error);
+showAuthMessage(error.message || 'Login failed', 'error');
+}
+}
+
+// Handle Signup
+async function handleSignup() {
+const email = document.getElementById('signupEmail').value.trim();
+const password = document.getElementById('signupPassword').value;
+const confirm = document.getElementById('signupConfirm').value;
+
+if (!email || !password || !confirm) {
+showAuthMessage('Please fill in all fields', 'error');
+return;
+}
+
+if (password.length < 6) {
+showAuthMessage('Password must be at least 6 characters', 'error');
+return;
+}
+
+if (password !== confirm) {
+showAuthMessage('Passwords do not match', 'error');
+return;
+}
+
+showAuthMessage('Creating account...', 'info');
+
+try {
+const { data, error } = await supabase.auth.signUp({
+email: email,
+password: password
+});
+
+if (error) throw error;
+
+showAuthMessage('Account created! Please check your email to verify.', 'success');
+
+// Auto-login after signup (if email verification not required)
+setTimeout(() => {
+showLogin();
+}, 3000);
+
+} catch (error) {
+console.error('Signup error:', error);
+showAuthMessage(error.message || 'Signup failed', 'error');
+}
+}
+
+// Handle Logout
+async function handleLogout() {
+try {
+const { error } = await supabase.auth.signOut();
+if (error) throw error;
+
+currentUser = null;
+
+// Clear state
+state.asinData = { etrade: [], retailez: [], clicktech: [] };
+state.invoiceData = { etrade: [], retailez: [], clicktech: [] };
+state.savedInvoices = { etrade: [], retailez: [], clicktech: [] };
+state.advertisingData = { etrade: [], retailez: [], clicktech: [] };
+state.savedVretCogs = { etrade: [], retailez: [], clicktech: [] };
+
+// Show auth, hide app
+document.getElementById('authContainer').style.display = 'flex';
+document.getElementById('appContainer').style.display = 'none';
+
+console.log('✅ Logged out');
+} catch (error) {
+console.error('Logout error:', error);
+alert('Error logging out: ' + error.message);
+}
+}
+
+// Check Auth State on Load
+async function checkAuthState() {
+const { data: { session } } = await supabase.auth.getSession();
+
+if (session) {
+currentUser = session.user;
+console.log('✅ User already logged in:', currentUser.email);
+
+// Show main app
+document.getElementById('authContainer').style.display = 'none';
+document.getElementById('appContainer').style.display = 'block';
+document.getElementById('userEmail').textContent = currentUser.email;
+
+// Load data
+await SupabaseDB.loadAllData();
+render();
+} else {
+// Show auth screen
+document.getElementById('authContainer').style.display = 'flex';
+document.getElementById('appContainer').style.display = 'none';
+}
+}
+
+// Listen for auth changes
+supabase.auth.onAuthStateChange((event, session) => {
+console.log('Auth state changed:', event);
+if (event === 'SIGNED_OUT') {
+currentUser = null;
+document.getElementById('authContainer').style.display = 'flex';
+document.getElementById('appContainer').style.display = 'none';
+}
+});
+
+const SupabaseDB = {
+// Get current user ID
+getUserId() {
+if (!currentUser) {
+throw new Error('No user logged in');
+}
+return currentUser.id;
+},
+
+// ============================================
+// ASIN MASTER OPERATIONS
+// ============================================
+
+async saveAsinMaster(vendor, asinData) {
+try {
+const userId = this.getUserId();
+console.log(`💾 Saving ASIN Master for ${vendor}...`);
+
+// Delete existing records for this vendor
+await supabase
+.from('asin_master')
+.delete()
+.eq('user_id', userId)
+.eq('vendor', vendor);
+
+// Insert new records
+const records = asinData
+.filter(item => item.asin && item.asin.trim())
+.map(item => ({
+user_id: userId,
+vendor: vendor,
+asin: item.asin.trim(),
+price: parseFloat(item.price) || 0
+}));
+
+if (records.length > 0) {
+const { error } = await supabase
+.from('asin_master')
+.insert(records);
+
+if (error) throw error;
+console.log(`✅ Saved ${records.length} ASIN records for ${vendor}`);
+}
+} catch (error) {
+console.error('Error saving ASIN Master:', error);
+throw error;
+}
+},
+
+async loadAsinMaster(vendor) {
+try {
+const userId = this.getUserId();
+console.log(`📥 Loading ASIN Master for ${vendor}...`);
+
+const { data, error } = await supabase
+.from('asin_master')
+.select('*')
+.eq('user_id', userId)
+.eq('vendor', vendor)
+.order('asin');
+
+if (error) throw error;
+
+const asinData = data.map((item, index) => ({
+id: index + 1,
+asin: item.asin,
+price: item.price.toString()
+}));
+
+console.log(`✅ Loaded ${asinData.length} ASIN records for ${vendor}`);
+return asinData;
+} catch (error) {
+console.error('Error loading ASIN Master:', error);
+return [];
+}
+},
+
+// ============================================
+// INVOICES OPERATIONS
+// ============================================
+
+async saveInvoices(vendor, invoiceData) {
+try {
+const userId = this.getUserId();
+console.log(`💾 Saving Invoices for ${vendor}...`);
+console.log(`Total invoice line items to save: ${invoiceData.length}`);
+
+// Delete existing records for this vendor
+const { error: deleteError } = await supabase
+.from('invoices')
+.delete()
+.eq('user_id', userId)
+.eq('vendor', vendor);
+
+if (deleteError) {
+console.error('Error deleting old invoices:', deleteError);
+}
+
+// Insert all records with unique row identifier
+const records = invoiceData
+.filter(item => item.asin && item.invoiceId)
+.map((item, index) => ({
+user_id: userId,
+vendor: vendor,
+date: item.date,
+invoice_id: item.invoiceId,
+asin: item.asin,
+quantity: parseInt(item.quantity) || 0,
+item_price: parseFloat(item.itemPrice) || 0,
+freight_cost: parseFloat(state.freightCosts[vendor]?.[item.invoiceId]) || 0,
+row_id: `${item.invoiceId}_${item.asin}_${index}_${Date.now()}`
+}));
+
+if (records.length > 0) {
+console.log(`Attempting to save ${records.length} invoice records...`);
+
+const { data, error } = await supabase
+.from('invoices')
+.insert(records);
+
+if (error) {
+console.error('❌ ERROR inserting invoices:', error);
+console.error('Error code:', error.code);
+console.error('Error message:', error.message);
+console.error('Error details:', error.details);
+console.error('Error hint:', error.hint);
+console.error('Sample of records that failed:', records.slice(0, 5));
+
+// Check if it's a unique constraint violation
+if (error.code === '23505') {
+showNotification('⚠️ Database constraint error - some invoices may not save. Check console for details.', 'warning');
+}
+
+throw error;
+}
+console.log(`✅ Saved ${records.length} invoice records for ${vendor}`);
+
+// Verify by counting
+const { count, error: countError } = await supabase
+.from('invoices')
+.select('*', { count: 'exact', head: true })
+.eq('user_id', userId)
+.eq('vendor', vendor);
+
+if (!countError) {
+console.log(`✅ Verified: ${count} invoices now in database for ${vendor}`);
+if (count !== records.length) {
+console.warn(`⚠️ WARNING: Tried to save ${records.length} but only ${count} in database!`);
+}
+}
+} else {
+console.log(`⚠️ No invoices to save for ${vendor}`);
+}
+} catch (error) {
+console.error('Error saving Invoices:', error);
+throw error;
+}
+},
+
+async loadInvoices(vendor) {
+try {
+const userId = this.getUserId();
+console.log(`📥 Loading Invoices for ${vendor}...`);
+
+const { data, error } = await supabase
+.from('invoices')
+.select('*')
+.eq('user_id', userId)
+.eq('vendor', vendor)
+.order('date', { ascending: false });
+
+if (error) throw error;
+
+// Initialize freight costs for this vendor
+if (!state.freightCosts[vendor]) {
+state.freightCosts[vendor] = {};
+} else {
+// Clear existing freight costs for this vendor
+state.freightCosts[vendor] = {};
+}
+
+const invoiceData = data.map((item, index) => {
+// Rebuild freight costs object
+if (item.freight_cost && item.freight_cost > 0) {
+state.freightCosts[vendor][item.invoice_id] = item.freight_cost;
+}
+
+return {
+id: index + 1,
+date: item.date,
+invoiceId: item.invoice_id,
+asin: item.asin,
+quantity: item.quantity.toString(),
+itemPrice: item.item_price.toString()
+};
+});
+
+console.log(`✅ Loaded ${invoiceData.length} invoice records for ${vendor}`);
+console.log(`✅ Rebuilt freight costs:`, Object.keys(state.freightCosts[vendor]).length, 'invoices');
+return invoiceData;
+} catch (error) {
+console.error('Error loading Invoices:', error);
+return [];
+}
+},
+
+// ============================================
+// ADVERTISING OPERATIONS
+// ============================================
+
+async saveAdvertising(vendor, adData) {
+try {
+const userId = this.getUserId();
+console.log(`💾 Saving Advertising for ${vendor}...`);
+
+// Delete existing records for this vendor
+await supabase
+.from('advertising')
+.delete()
+.eq('user_id', userId)
+.eq('vendor', vendor);
+
+// Insert new records
+const records = adData
+.filter(item => item.asin && item.asin.trim())
+.map(item => ({
+user_id: userId,
+vendor: vendor,
+date: item.date,
+asin: item.asin.trim(),
+spend: parseFloat(item.spend) || 0,
+sales: parseFloat(item.sales) || 0,
+orders: parseInt(item.orders) || 0,
+clicks: parseInt(item.clicks) || 0,
+impressions: parseInt(item.impressions) || 0
+}));
+
+if (records.length > 0) {
+const { error } = await supabase
+.from('advertising')
+.insert(records);
+
+if (error) throw error;
+console.log(`✅ Saved ${records.length} advertising records for ${vendor}`);
+}
+} catch (error) {
+console.error('Error saving Advertising:', error);
+throw error;
+}
+},
+
+async loadAdvertising(vendor) {
+try {
+const userId = this.getUserId();
+console.log(`📥 Loading Advertising for ${vendor}...`);
+
+const { data, error } = await supabase
+.from('advertising')
+.select('*')
+.eq('user_id', userId)
+.eq('vendor', vendor)
+.order('date', { ascending: false });
+
+if (error) throw error;
+
+const adData = data.map((item, index) => ({
+id: index + 1,
+date: item.date,
+asin: item.asin,
+spend: item.spend,
+sales: item.sales,
+orders: item.orders,
+clicks: item.clicks,
+impressions: item.impressions
+}));
+
+console.log(`✅ Loaded ${adData.length} advertising records for ${vendor}`);
+return adData;
+} catch (error) {
+console.error('Error loading Advertising:', error);
+return [];
+}
+},
+
+// ============================================
+// VRET & COGS OPERATIONS
+// ============================================
+
+async saveVretCogs(vendor, vretCogsData) {
+try {
+const userId = this.getUserId();
+console.log(`💾 Saving VRET & COGS for ${vendor}...`);
+
+// Delete existing records for this vendor
+await supabase
+.from('vret_cogs')
+.delete()
+.eq('user_id', userId)
+.eq('vendor', vendor);
+
+// Insert new records
+const records = vretCogsData
+.filter(item => item.month && item.year)
+.map(item => ({
+user_id: userId,
+vendor: vendor,
+month: item.month,
+year: item.year,
+vret: parseFloat(item.vret) || 0,
+cogs: parseFloat(item.cogs) || 0
+}));
+
+if (records.length > 0) {
+const { error } = await supabase
+.from('vret_cogs')
+.insert(records);
+
+if (error) throw error;
+console.log(`✅ Saved ${records.length} VRET & COGS records for ${vendor}`);
+}
+} catch (error) {
+console.error('Error saving VRET & COGS:', error);
+throw error;
+}
+},
+
+async loadVretCogs(vendor) {
+try {
+const userId = this.getUserId();
+console.log(`📥 Loading VRET & COGS for ${vendor}...`);
+
+const { data, error } = await supabase
+.from('vret_cogs')
+.select('*')
+.eq('user_id', userId)
+.eq('vendor', vendor)
+.order('year', { ascending: false })
+.order('month', { ascending: false });
+
+if (error) throw error;
+
+const vretCogsData = data.map((item, index) => ({
+id: index + 1,
+month: item.month,
+year: item.year,
+vret: item.vret,
+cogs: item.cogs
+}));
+
+console.log(`✅ Loaded ${vretCogsData.length} VRET & COGS records for ${vendor}`);
+return vretCogsData;
+} catch (error) {
+console.error('Error loading VRET & COGS:', error);
+return [];
+}
+},
+
+// ============================================
+// LOAD ALL DATA
+// ============================================
+
+async loadAllData() {
+try {
+console.log('📥 Loading all data from Supabase...');
+showNotification('Loading your data...', 'info');
+
+const vendors = ['etrade', 'retailez', 'clicktech'];
+
+for (const vendor of vendors) {
+// Load ASIN Master
+state.asinData[vendor] = await this.loadAsinMaster(vendor);
+
+// Load Invoices
+state.savedInvoices[vendor] = await this.loadInvoices(vendor);
+
+// Load Advertising
+state.advertisingData[vendor] = await this.loadAdvertising(vendor);
+
+// Load VRET & COGS
+state.savedVretCogs[vendor] = await this.loadVretCogs(vendor);
+}
+
+console.log('✅ All data loaded successfully');
+showNotification('✅ Data loaded successfully!', 'success');
+} catch (error) {
+console.error('Error loading data:', error);
+showNotification('❌ Error loading data: ' + error.message, 'error');
+throw error;
+}
+}
+};
+
+// Initialize authentication on page load
+checkAuthState();
+
+console.log('✓ Supabase integration ready');
+</script>
+</div> <!-- Close appContainer -->
+</body>
+</html>
