@@ -5582,7 +5582,29 @@ const { error: deleteError } = await supabase
 
 if (deleteError) {
 console.error('Error deleting old invoices:', deleteError);
+throw new Error(`Failed to delete old invoices: ${deleteError.message}`);
 }
+
+// Verify deletion was successful
+const { count: remainingCount, error: verifyError } = await supabase
+.from('invoices')
+.select('*', { count: 'exact', head: true })
+.eq('user_id', userId)
+.eq('vendor', vendor);
+
+if (verifyError) {
+console.error('Error verifying deletion:', verifyError);
+throw new Error(`Failed to verify deletion: ${verifyError.message}`);
+}
+
+if (remainingCount > 0) {
+console.warn(`⚠️ Warning: ${remainingCount} records still exist after deletion`);
+}
+
+console.log(`✅ Successfully deleted old invoices for ${vendor}`);
+
+// Generate unique base timestamp for this batch
+const batchTimestamp = Date.now();
 
 // Insert all records with unique row identifier
 const records = invoiceData
@@ -5596,7 +5618,7 @@ asin: item.asin,
 quantity: parseInt(item.quantity) || 0,
 item_price: parseFloat(item.itemPrice) || 0,
 freight_cost: parseFloat(state.freightCosts[vendor]?.[item.invoiceId]) || 0,
-row_id: `${item.invoiceId}_${item.asin}_${index}_${Date.now()}`
+row_id: `${userId}_${vendor}_${item.invoiceId}_${item.asin}_${index}_${batchTimestamp}`
 }));
 
 if (records.length > 0) {
