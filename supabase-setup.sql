@@ -73,6 +73,12 @@ CREATE POLICY "Users can access own vret_cogs" ON vret_cogs
 -- These functions bypass Supabase's default 1000-row limit
 -- by using PostgreSQL functions that return unlimited rows
 
+-- Drop existing functions if they exist (to allow schema changes)
+DROP FUNCTION IF EXISTS get_all_invoices(UUID, TEXT);
+DROP FUNCTION IF EXISTS get_all_advertising(UUID, TEXT);
+DROP FUNCTION IF EXISTS get_all_asin_master(UUID, TEXT);
+DROP FUNCTION IF EXISTS get_all_vret_cogs(UUID, TEXT);
+
 -- Function to get all invoices for a vendor (UNLIMITED ROWS)
 CREATE OR REPLACE FUNCTION get_all_invoices(p_user_id UUID, p_vendor TEXT)
 RETURNS TABLE (
