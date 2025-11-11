@@ -1356,15 +1356,101 @@ clicktech: []
 deleteConfirm: null
 };
 
-// Load data from localStorage
+// Load data from Firebase
 async function loadData() {
 if (!currentUser) {
 console.log('No user logged in, skipping load');
 return;
 }
 
-// Load data from Firebase - implement as needed
-console.log('Firebase data loading - ready for implementation');
+try {
+console.log('📥 Loading data from Firebase...');
+const userId = currentUser.uid;
+const vendors = ['etrade', 'retailez', 'clicktech'];
+
+for (const vendor of vendors) {
+// Load ASIN Master
+const asinResult = await window.FirebaseDB.queryDocuments(`users/${userId}/asin_master`, [
+{ type: 'where', field: 'vendor', operator: '==', value: vendor }
+]);
+if (asinResult.success && asinResult.data.length > 0) {
+state.asinData[vendor] = asinResult.data.map((item, index) => ({
+id: index + 1,
+asin: item.asin || '',
+price: item.price || ''
+}));
+console.log(`✅ Loaded ${state.asinData[vendor].length} ASINs for ${vendor}`);
+}
+
+// Load Invoices
+const invoiceResult = await window.FirebaseDB.queryDocuments(`users/${userId}/invoices`, [
+{ type: 'where', field: 'vendor', operator: '==', value: vendor }
+]);
+if (invoiceResult.success && invoiceResult.data.length > 0) {
+state.savedInvoices[vendor] = invoiceResult.data.map((item, index) => ({
+id: index + 1,
+date: item.date || '',
+invoiceId: item.invoiceId || '',
+asin: item.asin || '',
+quantity: item.quantity || '',
+itemPrice: item.itemPrice || ''
+}));
+console.log(`✅ Loaded ${state.savedInvoices[vendor].length} invoices for ${vendor}`);
+}
+
+// Load Advertising
+const adResult = await window.FirebaseDB.queryDocuments(`users/${userId}/advertising`, [
+{ type: 'where', field: 'vendor', operator: '==', value: vendor }
+]);
+if (adResult.success && adResult.data.length > 0) {
+state.advertisingData[vendor] = adResult.data.map(item => ({
+asin: item.asin || '',
+date: item.date || '',
+spend: item.spend || 0,
+sales: item.sales || 0,
+orders: item.orders || 0,
+clicks: item.clicks || 0,
+impressions: item.impressions || 0
+}));
+console.log(`✅ Loaded ${state.advertisingData[vendor].length} advertising entries for ${vendor}`);
+}
+
+// Load VRET & COGS
+const vretResult = await window.FirebaseDB.queryDocuments(`users/${userId}/vret_cogs`, [
+{ type: 'where', field: 'vendor', operator: '==', value: vendor }
+]);
+if (vretResult.success && vretResult.data.length > 0) {
+state.savedVretCogs[vendor] = vretResult.data.map((item, index) => ({
+id: index + 1,
+month: item.month || '',
+year: item.year || '',
+vret: item.vret || '',
+cogs: item.cogs || ''
+}));
+console.log(`✅ Loaded ${state.savedVretCogs[vendor].length} VRET/COGS entries for ${vendor}`);
+}
+
+// Load Freight Costs
+const freightResult = await window.FirebaseDB.queryDocuments(`users/${userId}/freight_costs`, [
+{ type: 'where', field: 'vendor', operator: '==', value: vendor }
+]);
+if (freightResult.success && freightResult.data.length > 0) {
+state.freightCosts[vendor] = {};
+freightResult.data.forEach(item => {
+if (item.invoiceId) {
+state.freightCosts[vendor][item.invoiceId] = item.cost || 0;
+}
+});
+console.log(`✅ Loaded freight costs for ${vendor}`);
+}
+}
+
+console.log('✅ All data loaded from Firebase');
+render();
+} catch (error) {
+console.error('Error loading data from Firebase:', error);
+showNotification('❌ Error loading data: ' + error.message, 'error');
+}
 }
 
 // Save data to Firebase
@@ -1376,12 +1462,111 @@ return;
 
 try {
 console.log('💾 Saving all data to Firebase...');
-// Firebase save implementation - ready for implementation
-console.log('✅ Firebase save functionality ready');
-showNotification('✅ Data saved successfully!', 'success');
+const userId = currentUser.uid;
+const vendors = ['etrade', 'retailez', 'clicktech'];
+
+for (const vendor of vendors) {
+// Save ASIN Master
+const asinData = state.asinData[vendor] || [];
+for (const item of asinData) {
+if (item.asin && item.asin.trim()) {
+await window.FirebaseDB.setDocument(
+`users/${userId}/asin_master`,
+`${vendor}_${item.asin}`,
+{
+vendor: vendor,
+asin: item.asin,
+price: parseFloat(item.price) || 0
+}
+);
+}
+}
+console.log(`✅ Saved ${asinData.length} ASINs for ${vendor}`);
+
+// Save Invoices
+const invoices = state.savedInvoices[vendor] || [];
+for (let i = 0; i < invoices.length; i++) {
+const item = invoices[i];
+if (item.asin && item.invoiceId) {
+await window.FirebaseDB.setDocument(
+`users/${userId}/invoices`,
+`${vendor}_${item.invoiceId}_${item.asin}_${i}`,
+{
+vendor: vendor,
+date: item.date || '',
+invoiceId: item.invoiceId || '',
+asin: item.asin || '',
+quantity: item.quantity || '',
+itemPrice: item.itemPrice || ''
+}
+);
+}
+}
+console.log(`✅ Saved ${invoices.length} invoices for ${vendor}`);
+
+// Save Advertising
+const ads = state.advertisingData[vendor] || [];
+for (let i = 0; i < ads.length; i++) {
+const item = ads[i];
+if (item.asin) {
+await window.FirebaseDB.setDocument(
+`users/${userId}/advertising`,
+`${vendor}_${item.asin}_${item.date}_${i}`,
+{
+vendor: vendor,
+asin: item.asin || '',
+date: item.date || '',
+spend: parseFloat(item.spend) || 0,
+sales: parseFloat(item.sales) || 0,
+orders: parseInt(item.orders) || 0,
+clicks: parseInt(item.clicks) || 0,
+impressions: parseInt(item.impressions) || 0
+}
+);
+}
+}
+console.log(`✅ Saved ${ads.length} advertising entries for ${vendor}`);
+
+// Save VRET & COGS
+const vretCogs = state.savedVretCogs[vendor] || [];
+for (const item of vretCogs) {
+if (item.month && item.year) {
+await window.FirebaseDB.setDocument(
+`users/${userId}/vret_cogs`,
+`${vendor}_${item.year}_${item.month}`,
+{
+vendor: vendor,
+month: item.month || '',
+year: item.year || '',
+vret: parseFloat(item.vret) || 0,
+cogs: parseFloat(item.cogs) || 0
+}
+);
+}
+}
+console.log(`✅ Saved ${vretCogs.length} VRET/COGS entries for ${vendor}`);
+
+// Save Freight Costs
+const freightCosts = state.freightCosts[vendor] || {};
+for (const invoiceId in freightCosts) {
+await window.FirebaseDB.setDocument(
+`users/${userId}/freight_costs`,
+`${vendor}_${invoiceId}`,
+{
+vendor: vendor,
+invoiceId: invoiceId,
+cost: parseFloat(freightCosts[invoiceId]) || 0
+}
+);
+}
+console.log(`✅ Saved freight costs for ${vendor}`);
+}
+
+console.log('✅ All data saved to Firebase');
+showNotification('✅ Data saved to Firebase successfully!', 'success');
 } catch (error) {
-console.error('Error saving data:', error);
-showNotification('❌ Error saving: ' + error.message, 'error');
+console.error('Error saving data to Firebase:', error);
+showNotification('❌ Error saving data: ' + error.message, 'error');
 }
 }
 
@@ -5607,7 +5792,7 @@ console.log('✓ Firebase authentication ready');
   };
 
   // Listen for auth state changes
-  onAuthStateChanged(auth, (user) => {
+  onAuthStateChanged(auth, async (user) => {
     if (user) {
       // User is signed in
       console.log('🔐 User is signed in:', user.email);
@@ -5621,6 +5806,11 @@ console.log('✓ Firebase authentication ready');
       if (authContainer) authContainer.style.display = 'none';
       if (appContainer) appContainer.style.display = 'block';
       if (userEmailSpan) userEmailSpan.textContent = user.email;
+
+      // Load user data from Firebase
+      if (typeof loadData === 'function') {
+        await loadData();
+      }
 
       // Render the app
       if (typeof render === 'function') {
