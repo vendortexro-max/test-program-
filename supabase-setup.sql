@@ -170,7 +170,7 @@ RETURNS TABLE (
     user_id UUID,
     vendor TEXT,
     asin TEXT,
-    product_name TEXT,
+    price NUMERIC,
     created_at TIMESTAMPTZ
 )
 LANGUAGE plpgsql
@@ -189,7 +189,7 @@ BEGIN
         am.user_id,
         am.vendor,
         am.asin,
-        am.product_name,
+        am.price,
         am.created_at
     FROM asin_master am
     WHERE am.user_id = p_user_id
@@ -206,8 +206,7 @@ RETURNS TABLE (
     vendor TEXT,
     year INTEGER,
     month INTEGER,
-    asin TEXT,
-    vret_rate NUMERIC,
+    vret NUMERIC,
     cogs NUMERIC,
     created_at TIMESTAMPTZ
 )
@@ -228,8 +227,7 @@ BEGIN
         vc.vendor,
         vc.year,
         vc.month,
-        vc.asin,
-        vc.vret_rate,
+        vc.vret,
         vc.cogs,
         vc.created_at
     FROM vret_cogs vc
