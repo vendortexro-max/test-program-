@@ -74,10 +74,10 @@ CREATE POLICY "Users can access own vret_cogs" ON vret_cogs
 -- by using PostgreSQL functions that return unlimited rows
 
 -- Drop existing functions if they exist (to allow schema changes)
-DROP FUNCTION IF EXISTS get_all_invoices(UUID, TEXT);
-DROP FUNCTION IF EXISTS get_all_advertising(UUID, TEXT);
-DROP FUNCTION IF EXISTS get_all_asin_master(UUID, TEXT);
-DROP FUNCTION IF EXISTS get_all_vret_cogs(UUID, TEXT);
+DROP FUNCTION IF EXISTS get_all_invoices(uuid, text) CASCADE;
+DROP FUNCTION IF EXISTS get_all_advertising(uuid, text) CASCADE;
+DROP FUNCTION IF EXISTS get_all_asin_master(uuid, text) CASCADE;
+DROP FUNCTION IF EXISTS get_all_vret_cogs(uuid, text) CASCADE;
 
 -- Function to get all invoices for a vendor (UNLIMITED ROWS)
 CREATE OR REPLACE FUNCTION get_all_invoices(p_user_id UUID, p_vendor TEXT)
