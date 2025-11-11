@@ -5883,6 +5883,164 @@ checkAuthState();
 
 console.log('✓ Supabase integration ready');
 </script>
+
+<!-- Firebase Configuration -->
+<script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-analytics.js";
+  import { getFirestore, collection, addDoc, getDocs, setDoc, doc, query, where, orderBy, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+
+  // Your web app's Firebase configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyC8n7E0gJvshWoggZclQiggshjnT_62ZEs",
+    authDomain: "pnl-amzon.firebaseapp.com",
+    projectId: "pnl-amzon",
+    storageBucket: "pnl-amzon.firebasestorage.app",
+    messagingSenderId: "446380051117",
+    appId: "1:446380051117:web:56622e3ef1865445885424",
+    measurementId: "G-3G1N5M942F"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+  const db = getFirestore(app);
+
+  // Make Firebase globally available
+  window.firebaseDB = db;
+  window.firebaseApp = app;
+
+  // Firebase Database Helper Functions
+  window.FirebaseDB = {
+    // Add a document to a collection
+    async addDocument(collectionName, data) {
+      try {
+        const docRef = await addDoc(collection(db, collectionName), {
+          ...data,
+          createdAt: new Date().toISOString()
+        });
+        console.log(`✅ Document added to ${collectionName} with ID: ${docRef.id}`);
+        return { success: true, id: docRef.id };
+      } catch (error) {
+        console.error(`❌ Error adding document to ${collectionName}:`, error);
+        return { success: false, error: error.message };
+      }
+    },
+
+    // Set a document with a specific ID
+    async setDocument(collectionName, docId, data) {
+      try {
+        await setDoc(doc(db, collectionName, docId), {
+          ...data,
+          updatedAt: new Date().toISOString()
+        });
+        console.log(`✅ Document set in ${collectionName} with ID: ${docId}`);
+        return { success: true, id: docId };
+      } catch (error) {
+        console.error(`❌ Error setting document in ${collectionName}:`, error);
+        return { success: false, error: error.message };
+      }
+    },
+
+    // Update a document
+    async updateDocument(collectionName, docId, data) {
+      try {
+        await updateDoc(doc(db, collectionName, docId), {
+          ...data,
+          updatedAt: new Date().toISOString()
+        });
+        console.log(`✅ Document updated in ${collectionName} with ID: ${docId}`);
+        return { success: true, id: docId };
+      } catch (error) {
+        console.error(`❌ Error updating document in ${collectionName}:`, error);
+        return { success: false, error: error.message };
+      }
+    },
+
+    // Get all documents from a collection
+    async getAllDocuments(collectionName) {
+      try {
+        const querySnapshot = await getDocs(collection(db, collectionName));
+        const documents = [];
+        querySnapshot.forEach((doc) => {
+          documents.push({ id: doc.id, ...doc.data() });
+        });
+        console.log(`✅ Retrieved ${documents.length} documents from ${collectionName}`);
+        return { success: true, data: documents };
+      } catch (error) {
+        console.error(`❌ Error getting documents from ${collectionName}:`, error);
+        return { success: false, error: error.message };
+      }
+    },
+
+    // Query documents with filters
+    async queryDocuments(collectionName, conditions = []) {
+      try {
+        let q = collection(db, collectionName);
+
+        // Apply conditions (e.g., [{ field: 'vendor', operator: '==', value: 'etrade' }])
+        if (conditions.length > 0) {
+          const constraints = conditions.map(condition => {
+            if (condition.type === 'where') {
+              return where(condition.field, condition.operator, condition.value);
+            } else if (condition.type === 'orderBy') {
+              return orderBy(condition.field, condition.direction || 'asc');
+            }
+          });
+          q = query(q, ...constraints);
+        }
+
+        const querySnapshot = await getDocs(q);
+        const documents = [];
+        querySnapshot.forEach((doc) => {
+          documents.push({ id: doc.id, ...doc.data() });
+        });
+        console.log(`✅ Query returned ${documents.length} documents from ${collectionName}`);
+        return { success: true, data: documents };
+      } catch (error) {
+        console.error(`❌ Error querying ${collectionName}:`, error);
+        return { success: false, error: error.message };
+      }
+    },
+
+    // Delete a document
+    async deleteDocument(collectionName, docId) {
+      try {
+        await deleteDoc(doc(db, collectionName, docId));
+        console.log(`✅ Document deleted from ${collectionName} with ID: ${docId}`);
+        return { success: true };
+      } catch (error) {
+        console.error(`❌ Error deleting document from ${collectionName}:`, error);
+        return { success: false, error: error.message };
+      }
+    },
+
+    // Example: Save vendor data
+    async saveVendorData(userId, vendor, dataType, data) {
+      const collectionName = `users/${userId}/${dataType}`;
+      return await this.addDocument(collectionName, {
+        vendor: vendor,
+        data: data,
+        timestamp: new Date().toISOString()
+      });
+    },
+
+    // Example: Get vendor data
+    async getVendorData(userId, vendor, dataType) {
+      const collectionName = `users/${userId}/${dataType}`;
+      return await this.queryDocuments(collectionName, [
+        { type: 'where', field: 'vendor', operator: '==', value: vendor },
+        { type: 'orderBy', field: 'timestamp', direction: 'desc' }
+      ]);
+    }
+  };
+
+  console.log('✅ Firebase initialized successfully!');
+  console.log('✅ Firestore database ready!');
+  console.log('📚 Available methods: FirebaseDB.addDocument, FirebaseDB.setDocument, FirebaseDB.updateDocument, FirebaseDB.getAllDocuments, FirebaseDB.queryDocuments, FirebaseDB.deleteDocument');
+</script>
+
 </div> <!-- Close appContainer -->
 </body>
 </html>
