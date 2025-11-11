@@ -5545,7 +5545,8 @@ const { data, error } = await supabase
 .select('*')
 .eq('user_id', userId)
 .eq('vendor', vendor)
-.order('asin');
+.order('asin')
+.limit(50000);
 
 if (error) throw error;
 
@@ -5677,7 +5678,8 @@ const { data, error } = await supabase
 .select('*')
 .eq('user_id', userId)
 .eq('vendor', vendor)
-.order('date', { ascending: false });
+.order('date', { ascending: false })
+.limit(50000);
 
 if (error) throw error;
 
@@ -5769,7 +5771,8 @@ const { data, error } = await supabase
 .select('*')
 .eq('user_id', userId)
 .eq('vendor', vendor)
-.order('date', { ascending: false });
+.order('date', { ascending: false })
+.limit(50000);
 
 if (error) throw error;
 
@@ -5845,7 +5848,8 @@ const { data, error } = await supabase
 .eq('user_id', userId)
 .eq('vendor', vendor)
 .order('year', { ascending: false })
-.order('month', { ascending: false });
+.order('month', { ascending: false })
+.limit(50000);
 
 if (error) throw error;
 
