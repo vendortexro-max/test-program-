@@ -5678,8 +5678,7 @@ const { data, error } = await supabase
 .select('*')
 .eq('user_id', userId)
 .eq('vendor', vendor)
-.order('date', { ascending: false })
-.limit(50000);
+.order('date', { ascending: false });
 
 if (error) throw error;
 
@@ -5771,8 +5770,7 @@ const { data, error } = await supabase
 .select('*')
 .eq('user_id', userId)
 .eq('vendor', vendor)
-.order('date', { ascending: false })
-.limit(50000);
+.order('date', { ascending: false });
 
 if (error) throw error;
 
