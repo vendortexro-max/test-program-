@@ -5539,24 +5539,24 @@ async loadAsinMaster(vendor) {
 try {
 const userId = this.getUserId();
 console.log(`📥 Loading ASIN Master for ${vendor}...`);
+console.log(`🚀 Using SQL function to bypass 1000-row limit...`);
 
+// Use SQL function to get ALL ASIN master data without limit
 const { data, error } = await supabase
-.from('asin_master')
-.select('*')
-.eq('user_id', userId)
-.eq('vendor', vendor)
-.order('asin')
-.limit(50000);
+.rpc('get_all_asin_master', {
+p_user_id: userId,
+p_vendor: vendor
+});
 
 if (error) throw error;
 
 const asinData = data.map((item, index) => ({
 id: index + 1,
 asin: item.asin,
-price: item.price.toString()
+price: item.price ? item.price.toString() : '0'
 }));
 
-console.log(`✅ Loaded ${asinData.length} ASIN records for ${vendor}`);
+console.log(`✅ Loaded ${asinData.length} ASIN records for ${vendor} (NO LIMIT!)`);
 return asinData;
 } catch (error) {
 console.error('Error loading ASIN Master:', error);
@@ -5672,42 +5672,18 @@ async loadInvoices(vendor) {
 try {
 const userId = this.getUserId();
 console.log(`📥 Loading Invoices for ${vendor}...`);
+console.log(`🚀 Using SQL function to bypass 1000-row limit...`);
 
-// Pagination settings
-const batchSize = 1000;
-let allData = [];
-let from = 0;
-let hasMore = true;
-
-// Load data in batches
-while (hasMore) {
-const to = from + batchSize - 1;
-console.log(`📦 Fetching invoices batch: ${from} to ${to}`);
-
+// Use SQL function to get ALL invoices without limit
 const { data, error } = await supabase
-.from('invoices')
-.select('*')
-.eq('user_id', userId)
-.eq('vendor', vendor)
-.order('date', { ascending: false })
-.range(from, to);
+.rpc('get_all_invoices', {
+p_user_id: userId,
+p_vendor: vendor
+});
 
 if (error) throw error;
 
-if (data && data.length > 0) {
-allData = allData.concat(data);
-console.log(`✓ Loaded ${data.length} records (Total: ${allData.length})`);
-}
-
-// Check if we got less than batch size (means we reached the end)
-if (!data || data.length < batchSize) {
-hasMore = false;
-} else {
-from += batchSize;
-}
-}
-
-console.log(`✅ Completed loading ${allData.length} invoice records for ${vendor}`);
+console.log(`✅ Loaded ${data.length} invoice records for ${vendor} (NO LIMIT!)`);
 
 // Initialize freight costs for this vendor
 if (!state.freightCosts[vendor]) {
@@ -5717,7 +5693,7 @@ state.freightCosts[vendor] = {};
 state.freightCosts[vendor] = {};
 }
 
-const invoiceData = allData.map((item, index) => {
+const invoiceData = data.map((item, index) => {
 // Rebuild freight costs object
 if (item.freight_cost && item.freight_cost > 0) {
 state.freightCosts[vendor][item.invoice_id] = item.freight_cost;
@@ -5790,44 +5766,20 @@ async loadAdvertising(vendor) {
 try {
 const userId = this.getUserId();
 console.log(`📥 Loading Advertising for ${vendor}...`);
+console.log(`🚀 Using SQL function to bypass 1000-row limit...`);
 
-// Pagination settings
-const batchSize = 1000;
-let allData = [];
-let from = 0;
-let hasMore = true;
-
-// Load data in batches
-while (hasMore) {
-const to = from + batchSize - 1;
-console.log(`📦 Fetching advertising batch: ${from} to ${to}`);
-
+// Use SQL function to get ALL advertising data without limit
 const { data, error } = await supabase
-.from('advertising')
-.select('*')
-.eq('user_id', userId)
-.eq('vendor', vendor)
-.order('date', { ascending: false })
-.range(from, to);
+.rpc('get_all_advertising', {
+p_user_id: userId,
+p_vendor: vendor
+});
 
 if (error) throw error;
 
-if (data && data.length > 0) {
-allData = allData.concat(data);
-console.log(`✓ Loaded ${data.length} records (Total: ${allData.length})`);
-}
+console.log(`✅ Loaded ${data.length} advertising records for ${vendor} (NO LIMIT!)`);
 
-// Check if we got less than batch size (means we reached the end)
-if (!data || data.length < batchSize) {
-hasMore = false;
-} else {
-from += batchSize;
-}
-}
-
-console.log(`✅ Completed loading ${allData.length} advertising records for ${vendor}`);
-
-const adData = allData.map((item, index) => ({
+const adData = data.map((item, index) => ({
 id: index + 1,
 date: item.date,
 asin: item.asin,
@@ -5891,15 +5843,14 @@ async loadVretCogs(vendor) {
 try {
 const userId = this.getUserId();
 console.log(`📥 Loading VRET & COGS for ${vendor}...`);
+console.log(`🚀 Using SQL function to bypass 1000-row limit...`);
 
+// Use SQL function to get ALL VRET & COGS data without limit
 const { data, error } = await supabase
-.from('vret_cogs')
-.select('*')
-.eq('user_id', userId)
-.eq('vendor', vendor)
-.order('year', { ascending: false })
-.order('month', { ascending: false })
-.limit(50000);
+.rpc('get_all_vret_cogs', {
+p_user_id: userId,
+p_vendor: vendor
+});
 
 if (error) throw error;
 
@@ -5907,11 +5858,11 @@ const vretCogsData = data.map((item, index) => ({
 id: index + 1,
 month: item.month,
 year: item.year,
-vret: item.vret,
+vret: item.vret_rate,
 cogs: item.cogs
 }));
 
-console.log(`✅ Loaded ${vretCogsData.length} VRET & COGS records for ${vendor}`);
+console.log(`✅ Loaded ${vretCogsData.length} VRET & COGS records for ${vendor} (NO LIMIT!)`);
 return vretCogsData;
 } catch (error) {
 console.error('Error loading VRET & COGS:', error);
