@@ -5307,7 +5307,7 @@ msgDiv.className = 'auth-message';
 msgDiv.textContent = '';
 }
 
-// Handle Login (Firebase implementation ready)
+// Handle Login
 async function handleLogin() {
 const email = document.getElementById('loginEmail').value.trim();
 const password = document.getElementById('loginPassword').value;
@@ -5320,15 +5320,20 @@ return;
 showAuthMessage('Logging in...', 'info');
 
 try {
-// Firebase Auth implementation here
-showAuthMessage('Firebase authentication ready for implementation', 'info');
+const result = await window.FirebaseAuth.signIn(email, password);
+if (result.success) {
+showAuthMessage('✅ Login successful! Loading your data...', 'success');
+// Auth state listener will handle UI updates
+} else {
+showAuthMessage(result.error || 'Login failed', 'error');
+}
 } catch (error) {
 console.error('Login error:', error);
 showAuthMessage(error.message || 'Login failed', 'error');
 }
 }
 
-// Handle Signup (Firebase implementation ready)
+// Handle Signup
 async function handleSignup() {
 const email = document.getElementById('signupEmail').value.trim();
 const password = document.getElementById('signupPassword').value;
@@ -5352,8 +5357,13 @@ return;
 showAuthMessage('Creating account...', 'info');
 
 try {
-// Firebase Auth implementation here
-showAuthMessage('Firebase authentication ready for implementation', 'info');
+const result = await window.FirebaseAuth.signUp(email, password);
+if (result.success) {
+showAuthMessage('✅ Account created successfully! Logging you in...', 'success');
+// Auth state listener will handle UI updates
+} else {
+showAuthMessage(result.error || 'Signup failed', 'error');
+}
 } catch (error) {
 console.error('Signup error:', error);
 showAuthMessage(error.message || 'Signup failed', 'error');
@@ -5363,8 +5373,8 @@ showAuthMessage(error.message || 'Signup failed', 'error');
 // Handle Logout
 async function handleLogout() {
 try {
-currentUser = null;
-
+const result = await window.FirebaseAuth.signOut();
+if (result.success) {
 // Clear state
 state.asinData = { etrade: [], retailez: [], clicktech: [] };
 state.invoiceData = { etrade: [], retailez: [], clicktech: [] };
@@ -5372,24 +5382,19 @@ state.savedInvoices = { etrade: [], retailez: [], clicktech: [] };
 state.advertisingData = { etrade: [], retailez: [], clicktech: [] };
 state.savedVretCogs = { etrade: [], retailez: [], clicktech: [] };
 
-// Show auth, hide app
-document.getElementById('authContainer').style.display = 'flex';
-document.getElementById('appContainer').style.display = 'none';
-
-console.log('✅ Logged out');
+console.log('✅ Logged out successfully');
+// Auth state listener will handle UI updates
+} else {
+alert('Error logging out: ' + result.error);
+}
 } catch (error) {
 console.error('Logout error:', error);
 alert('Error logging out: ' + error.message);
 }
 }
 
-// Check Auth State on Load
-async function checkAuthState() {
-// Firebase auth check implementation here
-// For now, show auth screen
-document.getElementById('authContainer').style.display = 'flex';
-document.getElementById('appContainer').style.display = 'none';
-}
+// Note: Auth state is handled by Firebase onAuthStateChanged listener
+// No need for manual checkAuthState() - Firebase handles it automatically
 
 console.log('✓ Firebase authentication ready');
 </script>
@@ -5400,6 +5405,7 @@ console.log('✓ Firebase authentication ready');
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
   import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-analytics.js";
   import { getFirestore, collection, addDoc, getDocs, setDoc, doc, query, where, orderBy, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
 
   // Your web app's Firebase configuration
   const firebaseConfig = {
@@ -5416,10 +5422,12 @@ console.log('✓ Firebase authentication ready');
   const app = initializeApp(firebaseConfig);
   const analytics = getAnalytics(app);
   const db = getFirestore(app);
+  const auth = getAuth(app);
 
   // Make Firebase globally available
   window.firebaseDB = db;
   window.firebaseApp = app;
+  window.firebaseAuth = auth;
 
   // Firebase Database Helper Functions
   window.FirebaseDB = {
@@ -5549,6 +5557,90 @@ console.log('✓ Firebase authentication ready');
   console.log('✅ Firebase initialized successfully!');
   console.log('✅ Firestore database ready!');
   console.log('📚 Available methods: FirebaseDB.addDocument, FirebaseDB.setDocument, FirebaseDB.updateDocument, FirebaseDB.getAllDocuments, FirebaseDB.queryDocuments, FirebaseDB.deleteDocument');
+
+  // ================================================
+  // FIREBASE AUTHENTICATION
+  // ================================================
+
+  // Firebase Auth Helper Functions
+  window.FirebaseAuth = {
+    // Sign up new user
+    async signUp(email, password) {
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        console.log('✅ User created:', userCredential.user.email);
+        return { success: true, user: userCredential.user };
+      } catch (error) {
+        console.error('❌ Signup error:', error);
+        return { success: false, error: error.message };
+      }
+    },
+
+    // Sign in existing user
+    async signIn(email, password) {
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        console.log('✅ User signed in:', userCredential.user.email);
+        return { success: true, user: userCredential.user };
+      } catch (error) {
+        console.error('❌ Login error:', error);
+        return { success: false, error: error.message };
+      }
+    },
+
+    // Sign out current user
+    async signOut() {
+      try {
+        await signOut(auth);
+        console.log('✅ User signed out');
+        return { success: true };
+      } catch (error) {
+        console.error('❌ Logout error:', error);
+        return { success: false, error: error.message };
+      }
+    },
+
+    // Get current user
+    getCurrentUser() {
+      return auth.currentUser;
+    }
+  };
+
+  // Listen for auth state changes
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      // User is signed in
+      console.log('🔐 User is signed in:', user.email);
+      window.currentUser = user;
+
+      // Show app container, hide auth container
+      const authContainer = document.getElementById('authContainer');
+      const appContainer = document.getElementById('appContainer');
+      const userEmailSpan = document.getElementById('userEmail');
+
+      if (authContainer) authContainer.style.display = 'none';
+      if (appContainer) appContainer.style.display = 'block';
+      if (userEmailSpan) userEmailSpan.textContent = user.email;
+
+      // Render the app
+      if (typeof render === 'function') {
+        render();
+      }
+    } else {
+      // User is signed out
+      console.log('🔓 User is signed out');
+      window.currentUser = null;
+
+      // Show auth container, hide app container
+      const authContainer = document.getElementById('authContainer');
+      const appContainer = document.getElementById('appContainer');
+
+      if (authContainer) authContainer.style.display = 'flex';
+      if (appContainer) appContainer.style.display = 'none';
+    }
+  });
+
+  console.log('✅ Firebase Authentication ready!');
 </script>
 
 </div> <!-- Close appContainer -->
