@@ -1358,14 +1358,14 @@ deleteConfirm: null
 
 // Load data from Firebase
 async function loadData() {
-if (!currentUser) {
+if (!window.currentUser) {
 console.log('No user logged in, skipping load');
 return;
 }
 
 try {
 console.log('📥 Loading data from Firebase Realtime Database...');
-const userId = currentUser.uid;
+const userId = window.currentUser.uid;
 
 // Load all data at once from Realtime Database
 const result = await window.RealtimeDB.getData(`users/${userId}`);
@@ -1397,14 +1397,14 @@ showNotification('❌ Error loading data: ' + error.message, 'error');
 
 // Save data to Firebase
 async function saveData() {
-if (!currentUser) {
+if (!window.currentUser) {
 console.log('No user logged in, skipping save');
 return;
 }
 
 try {
 console.log('💾 Saving all data to Firebase Realtime Database...');
-const userId = currentUser.uid;
+const userId = window.currentUser.uid;
 
 // Prepare data structure for Realtime Database
 const userData = {
@@ -1435,12 +1435,12 @@ showNotification('❌ Error saving data: ' + error.message, 'error');
 let realtimeListener = null;
 
 function setupRealtimeSync() {
-if (!currentUser) {
+if (!window.currentUser) {
 console.log('No user logged in, skipping real-time sync setup');
 return;
 }
 
-const userId = currentUser.uid;
+const userId = window.currentUser.uid;
 console.log('🔄 Setting up real-time data synchronization...');
 
 // Listen for changes to user data
@@ -5841,6 +5841,9 @@ console.log('✓ Firebase authentication ready');
   });
 
   console.log('✅ Firebase Authentication ready!');
+  console.log('✅ Firebase Realtime Database initialized at:', firebaseConfig.databaseURL);
+  console.log('🔍 Debug: window.currentUser on load =', window.currentUser);
+  console.log('🔍 Debug: window.RealtimeDB =', typeof window.RealtimeDB);
 </script>
 
 </div> <!-- Close appContainer -->
