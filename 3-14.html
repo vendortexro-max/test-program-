@@ -1433,6 +1433,7 @@ showNotification('❌ Error saving data: ' + error.message, 'error');
 
 // Set up real-time listener for live data synchronization
 let realtimeListener = null;
+let isLoggingOut = false; // Flag to prevent updates during logout
 
 function setupRealtimeSync() {
 if (!window.currentUser) {
@@ -1445,9 +1446,17 @@ console.log('🔄 Setting up real-time data synchronization...');
 
 // Listen for changes to user data
 realtimeListener = window.RealtimeDB.listenToData(`users/${userId}`, (result) => {
+// Don't update if we're in the process of logging out
+if (isLoggingOut) {
+console.log('⏸️ Ignoring real-time update during logout');
+return;
+}
+
 if (result.success && result.data) {
 const userData = result.data;
 
+// Only update if we have valid data (not empty)
+if (userData.asinData || userData.savedInvoices || userData.advertisingData) {
 // Update state with new data
 state.asinData = userData.asinData || { etrade: [], retailez: [], clicktech: [] };
 state.savedInvoices = userData.savedInvoices || { etrade: [], retailez: [], clicktech: [] };
@@ -1458,6 +1467,9 @@ state.freightCosts = userData.freightCosts || { etrade: {}, retailez: {}, clickt
 // Re-render the UI with updated data
 render();
 console.log('🔄 Data synced from Firebase in real-time');
+} else {
+console.log('⚠️ Received empty data from Firebase - ignoring to prevent data loss');
+}
 }
 });
 
@@ -5460,21 +5472,55 @@ showAuthMessage(error.message || 'Signup failed', 'error');
 // Handle Logout
 async function handleLogout() {
 try {
+console.log('🔄 Logging out...');
+
+// Set flag to prevent real-time updates during logout
+isLoggingOut = true;
+
+// Step 1: Save data before logout (to ensure no data loss)
+if (window.currentUser && typeof saveData === 'function') {
+console.log('💾 Saving data before logout...');
+await saveData();
+// Wait a moment to ensure save completes
+await new Promise(resolve => setTimeout(resolve, 1000));
+}
+
+// Step 2: Stop real-time listener
+if (typeof stopRealtimeSync === 'function') {
+stopRealtimeSync();
+}
+
+// Step 3: Sign out from Firebase
 const result = await window.FirebaseAuth.signOut();
 if (result.success) {
-// Clear state
+// Step 4: Clear all application state
 state.asinData = { etrade: [], retailez: [], clicktech: [] };
 state.invoiceData = { etrade: [], retailez: [], clicktech: [] };
 state.savedInvoices = { etrade: [], retailez: [], clicktech: [] };
 state.advertisingData = { etrade: [], retailez: [], clicktech: [] };
 state.savedVretCogs = { etrade: [], retailez: [], clicktech: [] };
+state.freightCosts = { etrade: {}, retailez: {}, clicktech: {} };
 
-console.log('✅ Logged out successfully');
+// Step 5: Clear browser storage (localStorage and sessionStorage)
+try {
+localStorage.clear();
+sessionStorage.clear();
+console.log('🧹 Browser cache and storage cleared');
+} catch (e) {
+console.warn('⚠️ Could not clear storage:', e);
+}
+
+// Reset logout flag
+isLoggingOut = false;
+
+console.log('✅ Logged out successfully - all data saved and cache cleared');
 // Auth state listener will handle UI updates
 } else {
+isLoggingOut = false;
 alert('Error logging out: ' + result.error);
 }
 } catch (error) {
+isLoggingOut = false;
 console.error('Logout error:', error);
 alert('Error logging out: ' + error.message);
 }
@@ -5492,7 +5538,7 @@ console.log('✓ Firebase authentication ready');
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
   import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-analytics.js";
   import { getFirestore, collection, addDoc, getDocs, setDoc, doc, query, where, orderBy, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
-  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence, inMemoryPersistence } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
   import { getDatabase, ref, set, get, update, remove, onValue, off } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-database.js";
 
   // Your web app's Firebase configuration
@@ -5513,6 +5559,16 @@ console.log('✓ Firebase authentication ready');
   const db = getFirestore(app);
   const auth = getAuth(app);
   const realtimeDB = getDatabase(app);
+
+  // Set authentication persistence to NONE - user must login after every page reload
+  // This prevents automatic login and clears session on page refresh
+  setPersistence(auth, inMemoryPersistence)
+    .then(() => {
+      console.log('✅ Auth persistence set to NONE - login required on each reload');
+    })
+    .catch((error) => {
+      console.error('❌ Error setting auth persistence:', error);
+    });
 
   // Make Firebase globally available
   window.firebaseDB = db;
