@@ -1366,51 +1366,48 @@ return;
 try {
 console.log('📥 Loading data from Firebase Realtime Database...');
 const userId = window.currentUser.uid;
+const vendors = ['etrade', 'retailez', 'clicktech'];
 
-// Load data from separate paths to avoid size limits
-// Load ASIN Data
-const asinResult = await window.RealtimeDB.getData(`users/${userId}/asinData`);
-if (asinResult.success && asinResult.data) {
-state.asinData = asinResult.data;
-console.log('✅ ASIN data loaded');
-} else {
+// Initialize state
 state.asinData = { etrade: [], retailez: [], clicktech: [] };
-}
-
-// Load Invoices
-const invoiceResult = await window.RealtimeDB.getData(`users/${userId}/savedInvoices`);
-if (invoiceResult.success && invoiceResult.data) {
-state.savedInvoices = invoiceResult.data;
-console.log('✅ Invoice data loaded');
-} else {
 state.savedInvoices = { etrade: [], retailez: [], clicktech: [] };
-}
-
-// Load Advertising Data
-const adResult = await window.RealtimeDB.getData(`users/${userId}/advertisingData`);
-if (adResult.success && adResult.data) {
-state.advertisingData = adResult.data;
-console.log('✅ Advertising data loaded');
-} else {
 state.advertisingData = { etrade: [], retailez: [], clicktech: [] };
-}
-
-// Load VRET & COGS
-const vretResult = await window.RealtimeDB.getData(`users/${userId}/savedVretCogs`);
-if (vretResult.success && vretResult.data) {
-state.savedVretCogs = vretResult.data;
-console.log('✅ VRET/COGS data loaded');
-} else {
 state.savedVretCogs = { etrade: [], retailez: [], clicktech: [] };
+state.freightCosts = { etrade: {}, retailez: {}, clicktech: {} };
+
+// Load data from vendor-specific paths
+for (const vendor of vendors) {
+// Load ASIN Data per vendor
+const asinResult = await window.RealtimeDB.getData(`users/${userId}/asinData/${vendor}`);
+if (asinResult.success && asinResult.data) {
+state.asinData[vendor] = asinResult.data;
 }
 
-// Load Freight Costs
-const freightResult = await window.RealtimeDB.getData(`users/${userId}/freightCosts`);
+// Load Invoices per vendor
+const invoiceResult = await window.RealtimeDB.getData(`users/${userId}/savedInvoices/${vendor}`);
+if (invoiceResult.success && invoiceResult.data) {
+state.savedInvoices[vendor] = invoiceResult.data;
+}
+
+// Load Advertising Data per vendor
+const adResult = await window.RealtimeDB.getData(`users/${userId}/advertisingData/${vendor}`);
+if (adResult.success && adResult.data) {
+state.advertisingData[vendor] = adResult.data;
+}
+
+// Load VRET & COGS per vendor
+const vretResult = await window.RealtimeDB.getData(`users/${userId}/savedVretCogs/${vendor}`);
+if (vretResult.success && vretResult.data) {
+state.savedVretCogs[vendor] = vretResult.data;
+}
+
+// Load Freight Costs per vendor
+const freightResult = await window.RealtimeDB.getData(`users/${userId}/freightCosts/${vendor}`);
 if (freightResult.success && freightResult.data) {
-state.freightCosts = freightResult.data;
-console.log('✅ Freight costs loaded');
-} else {
-state.freightCosts = { etrade: {}, retailez: {}, clicktech: {} };
+state.freightCosts[vendor] = freightResult.data;
+}
+
+console.log(`✅ Data loaded for ${vendor}`);
 }
 
 console.log('✅ All data loaded from Firebase Realtime Database');
@@ -1432,49 +1429,44 @@ return;
 try {
 console.log('💾 Saving all data to Firebase Realtime Database...');
 const userId = window.currentUser.uid;
+const vendors = ['etrade', 'retailez', 'clicktech'];
 
-// Split data into separate writes to avoid WRITE_TOO_BIG error
-// Save each data type to its own path
+// Split data by VENDOR to avoid WRITE_TOO_BIG error
+// Save each vendor's data to separate paths
 
-// Save ASIN Data
-const asinResult = await window.RealtimeDB.setData(
-`users/${userId}/asinData`,
-state.asinData || { etrade: [], retailez: [], clicktech: [] }
+for (const vendor of vendors) {
+// Save ASIN Data per vendor
+await window.RealtimeDB.setData(
+`users/${userId}/asinData/${vendor}`,
+state.asinData[vendor] || []
 );
-if (!asinResult.success) throw new Error('Failed to save ASIN data');
-console.log('✅ ASIN data saved');
 
-// Save Invoices
-const invoiceResult = await window.RealtimeDB.setData(
-`users/${userId}/savedInvoices`,
-state.savedInvoices || { etrade: [], retailez: [], clicktech: [] }
+// Save Invoices per vendor
+await window.RealtimeDB.setData(
+`users/${userId}/savedInvoices/${vendor}`,
+state.savedInvoices[vendor] || []
 );
-if (!invoiceResult.success) throw new Error('Failed to save invoice data');
-console.log('✅ Invoice data saved');
 
-// Save Advertising Data
-const adResult = await window.RealtimeDB.setData(
-`users/${userId}/advertisingData`,
-state.advertisingData || { etrade: [], retailez: [], clicktech: [] }
+// Save Advertising Data per vendor
+await window.RealtimeDB.setData(
+`users/${userId}/advertisingData/${vendor}`,
+state.advertisingData[vendor] || []
 );
-if (!adResult.success) throw new Error('Failed to save advertising data');
-console.log('✅ Advertising data saved');
 
-// Save VRET & COGS
-const vretResult = await window.RealtimeDB.setData(
-`users/${userId}/savedVretCogs`,
-state.savedVretCogs || { etrade: [], retailez: [], clicktech: [] }
+// Save VRET & COGS per vendor
+await window.RealtimeDB.setData(
+`users/${userId}/savedVretCogs/${vendor}`,
+state.savedVretCogs[vendor] || []
 );
-if (!vretResult.success) throw new Error('Failed to save VRET/COGS data');
-console.log('✅ VRET/COGS data saved');
 
-// Save Freight Costs
-const freightResult = await window.RealtimeDB.setData(
-`users/${userId}/freightCosts`,
-state.freightCosts || { etrade: {}, retailez: {}, clicktech: {} }
+// Save Freight Costs per vendor
+await window.RealtimeDB.setData(
+`users/${userId}/freightCosts/${vendor}`,
+state.freightCosts[vendor] || {}
 );
-if (!freightResult.success) throw new Error('Failed to save freight costs');
-console.log('✅ Freight costs saved');
+
+console.log(`✅ All data saved for ${vendor}`);
+}
 
 // Save metadata (last updated timestamp)
 await window.RealtimeDB.setData(
@@ -1491,13 +1483,7 @@ showNotification('❌ Error saving data: ' + error.message, 'error');
 }
 
 // Set up real-time listener for live data synchronization
-let realtimeListeners = {
-asinData: null,
-savedInvoices: null,
-advertisingData: null,
-savedVretCogs: null,
-freightCosts: null
-};
+let realtimeListeners = [];
 let isLoggingOut = false; // Flag to prevent updates during logout
 
 function setupRealtimeSync() {
@@ -1507,72 +1493,80 @@ return;
 }
 
 const userId = window.currentUser.uid;
+const vendors = ['etrade', 'retailez', 'clicktech'];
 console.log('🔄 Setting up real-time data synchronization...');
 
-// Set up separate listeners for each data type to avoid size issues
+// Set up separate listeners for each vendor and data type to avoid size issues
 
-// Listen to ASIN Data
-realtimeListeners.asinData = window.RealtimeDB.listenToData(`users/${userId}/asinData`, (result) => {
+for (const vendor of vendors) {
+// Listen to ASIN Data per vendor
+const asinListener = window.RealtimeDB.listenToData(`users/${userId}/asinData/${vendor}`, (result) => {
 if (isLoggingOut) return;
 if (result.success && result.data) {
-state.asinData = result.data;
+state.asinData[vendor] = result.data;
 render();
-console.log('🔄 ASIN data synced');
+console.log(`🔄 ASIN data synced for ${vendor}`);
 }
 });
+realtimeListeners.push(asinListener);
 
-// Listen to Invoices
-realtimeListeners.savedInvoices = window.RealtimeDB.listenToData(`users/${userId}/savedInvoices`, (result) => {
+// Listen to Invoices per vendor
+const invoiceListener = window.RealtimeDB.listenToData(`users/${userId}/savedInvoices/${vendor}`, (result) => {
 if (isLoggingOut) return;
 if (result.success && result.data) {
-state.savedInvoices = result.data;
+state.savedInvoices[vendor] = result.data;
 render();
-console.log('🔄 Invoice data synced');
+console.log(`🔄 Invoice data synced for ${vendor}`);
 }
 });
+realtimeListeners.push(invoiceListener);
 
-// Listen to Advertising Data
-realtimeListeners.advertisingData = window.RealtimeDB.listenToData(`users/${userId}/advertisingData`, (result) => {
+// Listen to Advertising Data per vendor
+const adListener = window.RealtimeDB.listenToData(`users/${userId}/advertisingData/${vendor}`, (result) => {
 if (isLoggingOut) return;
 if (result.success && result.data) {
-state.advertisingData = result.data;
+state.advertisingData[vendor] = result.data;
 render();
-console.log('🔄 Advertising data synced');
+console.log(`🔄 Advertising data synced for ${vendor}`);
 }
 });
+realtimeListeners.push(adListener);
 
-// Listen to VRET & COGS
-realtimeListeners.savedVretCogs = window.RealtimeDB.listenToData(`users/${userId}/savedVretCogs`, (result) => {
+// Listen to VRET & COGS per vendor
+const vretListener = window.RealtimeDB.listenToData(`users/${userId}/savedVretCogs/${vendor}`, (result) => {
 if (isLoggingOut) return;
 if (result.success && result.data) {
-state.savedVretCogs = result.data;
+state.savedVretCogs[vendor] = result.data;
 render();
-console.log('🔄 VRET/COGS data synced');
+console.log(`🔄 VRET/COGS data synced for ${vendor}`);
 }
 });
+realtimeListeners.push(vretListener);
 
-// Listen to Freight Costs
-realtimeListeners.freightCosts = window.RealtimeDB.listenToData(`users/${userId}/freightCosts`, (result) => {
+// Listen to Freight Costs per vendor
+const freightListener = window.RealtimeDB.listenToData(`users/${userId}/freightCosts/${vendor}`, (result) => {
 if (isLoggingOut) return;
 if (result.success && result.data) {
-state.freightCosts = result.data;
+state.freightCosts[vendor] = result.data;
 render();
-console.log('🔄 Freight costs synced');
+console.log(`🔄 Freight costs synced for ${vendor}`);
 }
 });
+realtimeListeners.push(freightListener);
+}
 
-console.log('✅ Real-time sync enabled for all data types - data will update automatically!');
+console.log('✅ Real-time sync enabled for all vendors - data will update automatically!');
 }
 
 function stopRealtimeSync() {
 // Stop all listeners
-for (const key in realtimeListeners) {
-if (realtimeListeners[key] && realtimeListeners[key].ref) {
-window.RealtimeDB.stopListening(realtimeListeners[key].ref);
-realtimeListeners[key] = null;
+for (const listener of realtimeListeners) {
+if (listener && listener.ref) {
+window.RealtimeDB.stopListening(listener.ref);
 }
 }
-console.log('🛑 Real-time sync stopped for all data types');
+realtimeListeners = [];
+console.log('🛑 Real-time sync stopped for all vendors');
 }
 
 // Helper Functions
