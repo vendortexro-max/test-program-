@@ -1673,9 +1673,22 @@ clicktech: []
 deleteConfirm: null
 };
 
-// Expose state to window for access from event listeners
+// ============================================================
+// CRITICAL: Expose all functions to window IMMEDIATELY
+// This ensures Firebase module can access them
+// ============================================================
 window.state = state;
 console.log('✓ State exposed to window');
+
+// Pre-declare function references (will be assigned below)
+window.loadData = null;
+window.saveData = null;
+window.render = null;
+window.setupRealtimeSync = null;
+window.stopRealtimeSync = null;
+window.isLoggingOut = false;
+
+console.log('✓ Window function placeholders created');
 
 // Load data from Firebase
 async function loadData() {
@@ -1821,9 +1834,9 @@ showNotification('❌ Error loading data: ' + error.message, 'error');
 }
 }
 
-// Expose loadData to window for access from auth handlers
+// IMMEDIATELY assign to window
 window.loadData = loadData;
-console.log('✓ loadData function exposed to window');
+console.log('✓ loadData function assigned to window');
 
 // Helper function to split array into batches
 function batchArray(array, batchSize = 500) {
@@ -1962,18 +1975,14 @@ showNotification('❌ Error saving data: ' + error.message, 'error');
 }
 }
 
-// Expose saveData to window for access from auth handlers
+// IMMEDIATELY assign to window
 window.saveData = saveData;
-console.log('✓ saveData function exposed to window');
+console.log('✓ saveData function assigned to window');
 
 // Real-time sync is disabled due to batching complexity
 // Data auto-saves every 30 seconds instead
 let realtimeListeners = [];
 let isLoggingOut = false; // Flag to prevent updates during logout
-
-// Expose critical functions and variables to window
-window.isLoggingOut = isLoggingOut;
-console.log('✓ isLoggingOut exposed to window');
 
 function setupRealtimeSync() {
 console.log('ℹ️ Real-time sync is disabled due to large dataset batching');
@@ -1981,15 +1990,17 @@ console.log('💾 Data auto-saves every 30 seconds instead');
 // With batched data, real-time sync would require too many listeners
 // Auto-save handles data persistence reliably
 }
-window.setupRealtimeSync = setupRealtimeSync;
 
 function stopRealtimeSync() {
 // No listeners to stop since real-time sync is disabled
 console.log('✅ No real-time listeners to stop');
 }
-window.stopRealtimeSync = stopRealtimeSync;
 
-console.log('✓ Realtime sync functions exposed to window');
+// IMMEDIATELY assign to window
+window.isLoggingOut = isLoggingOut;
+window.setupRealtimeSync = setupRealtimeSync;
+window.stopRealtimeSync = stopRealtimeSync;
+console.log('✓ Realtime sync functions assigned to window');
 
 // Helper Functions
 // Parse date string in multiple formats (YYYY-MM-DD, DD-MM-YYYY, etc.)
@@ -4583,9 +4594,9 @@ break;
 }
 }
 
-// Expose render function to window for access from event listeners
+// IMMEDIATELY assign to window
 window.render = render;
-console.log('✓ Render function exposed to window');
+console.log('✓ Render function assigned to window');
 
 // Initialize - DON'T call loadData() and render() here!
 // They will be called after user logs in via Firebase onAuthStateChanged listener
@@ -6413,12 +6424,36 @@ console.log('✓ Firebase authentication ready');
       if (appContainer) appContainer.style.display = 'block';
       if (userEmailSpan) userEmailSpan.textContent = user.email;
 
+      // Wait for main script functions to be ready (max 10 seconds)
+      console.log('⏳ Waiting for main script functions to be ready...');
+      let attempts = 0;
+      const maxAttempts = 100; // 100 attempts * 100ms = 10 seconds max wait
+
+      while ((!window.loadData || !window.render || !window.state) && attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        attempts++;
+        if (attempts % 10 === 0) {
+          console.log(`⏳ Still waiting... (${attempts * 100}ms elapsed)`);
+        }
+      }
+
+      if (!window.loadData || !window.render || !window.state) {
+        console.error('❌ Timeout: Main script functions not ready after 10 seconds');
+        console.error('❌ window.loadData:', typeof window.loadData);
+        console.error('❌ window.render:', typeof window.render);
+        console.error('❌ window.state:', typeof window.state);
+        alert('Error: Application functions failed to load. Please refresh the page.');
+        return;
+      }
+
+      console.log('✅ All functions ready!');
+
       // Load user data from Firebase
-      if (typeof window.loadData === 'function') {
+      try {
         console.log('📥 Calling loadData...');
         await window.loadData();
-      } else {
-        console.error('❌ window.loadData is not a function!');
+      } catch (error) {
+        console.error('❌ Error in loadData:', error);
       }
 
       // Set up real-time data synchronization
@@ -6427,11 +6462,11 @@ console.log('✓ Firebase authentication ready');
       }
 
       // Render the app
-      if (typeof window.render === 'function') {
+      try {
         console.log('🎨 Calling render...');
         window.render();
-      } else {
-        console.error('❌ window.render is not a function!');
+      } catch (error) {
+        console.error('❌ Error in render:', error);
       }
     } else {
       // User is signed out
