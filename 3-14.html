@@ -1221,6 +1221,323 @@ display: block;
 </div>
 </div>
 
+<script>
+// Define auth functions immediately so onclick handlers can find them
+// These will work once Firebase is initialized by the module script below
+
+function showAuthMessage(message, type) {
+  const msgDiv = document.getElementById('authMessage');
+  if (msgDiv) {
+    msgDiv.textContent = message;
+    msgDiv.className = `auth-message ${type}`;
+  }
+}
+
+function showLogin() {
+  const loginForm = document.getElementById('loginForm');
+  const signupForm = document.getElementById('signupForm');
+  if (loginForm) loginForm.style.display = 'block';
+  if (signupForm) signupForm.style.display = 'none';
+  showAuthMessage('', '');
+}
+
+function showSignup() {
+  const loginForm = document.getElementById('loginForm');
+  const signupForm = document.getElementById('signupForm');
+  if (loginForm) loginForm.style.display = 'none';
+  if (signupForm) signupForm.style.display = 'block';
+  showAuthMessage('', '');
+}
+
+async function handleLogin() {
+  console.log('🔍 handleLogin called');
+
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+
+  if (!email || !password) {
+    showAuthMessage('Please enter email and password', 'error');
+    return;
+  }
+
+  showAuthMessage('Logging in...', 'info');
+
+  try {
+    // Wait for Firebase to be initialized
+    let attempts = 0;
+    while (!window.FirebaseAuth && attempts < 50) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      attempts++;
+    }
+
+    if (!window.FirebaseAuth) {
+      throw new Error('Firebase not initialized. Please refresh the page.');
+    }
+
+    const result = await window.FirebaseAuth.signIn(email, password);
+    console.log('🔍 Login result:', result);
+
+    if (result.success) {
+      showAuthMessage('✅ Login successful! Loading your data...', 'success');
+    } else {
+      showAuthMessage(result.error || 'Login failed', 'error');
+    }
+  } catch (error) {
+    console.error('Login error:', error);
+    showAuthMessage(error.message || 'Login failed', 'error');
+  }
+}
+
+async function handleSignup() {
+  console.log('🔍 handleSignup called');
+
+  const email = document.getElementById('signupEmail').value.trim();
+  const password = document.getElementById('signupPassword').value;
+  const confirm = document.getElementById('signupConfirm').value;
+
+  if (!email || !password || !confirm) {
+    showAuthMessage('Please fill in all fields', 'error');
+    return;
+  }
+
+  if (password.length < 6) {
+    showAuthMessage('Password must be at least 6 characters', 'error');
+    return;
+  }
+
+  if (password !== confirm) {
+    showAuthMessage('Passwords do not match', 'error');
+    return;
+  }
+
+  showAuthMessage('Creating account...', 'info');
+
+  try {
+    // Wait for Firebase to be initialized
+    let attempts = 0;
+    while (!window.FirebaseAuth && attempts < 50) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      attempts++;
+    }
+
+    if (!window.FirebaseAuth) {
+      throw new Error('Firebase not initialized. Please refresh the page.');
+    }
+
+    const result = await window.FirebaseAuth.signUp(email, password);
+    console.log('🔍 Signup result:', result);
+
+    if (result.success) {
+      showAuthMessage('✅ Account created successfully! Logging you in...', 'success');
+    } else {
+      showAuthMessage(result.error || 'Signup failed', 'error');
+    }
+  } catch (error) {
+    console.error('Signup error:', error);
+    showAuthMessage(error.message || 'Signup failed', 'error');
+  }
+}
+
+async function handleLogout() {
+  try {
+    console.log('🔄 Logging out...');
+
+    if (typeof window.isLoggingOut !== 'undefined') {
+      window.isLoggingOut = true;
+    }
+
+    // Save data before logout
+    if (window.currentUser && typeof window.saveData === 'function') {
+      console.log('💾 Saving data before logout...');
+      await window.saveData(true);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+
+    // Sign out from Firebase
+    if (window.FirebaseAuth) {
+      const result = await window.FirebaseAuth.signOut();
+      if (result.success) {
+        // Clear storage
+        try {
+          localStorage.clear();
+          sessionStorage.clear();
+          console.log('🧹 Browser cache and storage cleared');
+        } catch (e) {
+          console.warn('⚠️ Could not clear storage:', e);
+        }
+
+        console.log('✅ Logged out successfully');
+      } else {
+        alert('Error logging out: ' + result.error);
+      }
+    }
+
+    if (typeof window.isLoggingOut !== 'undefined') {
+      window.isLoggingOut = false;
+    }
+  } catch (error) {
+    console.error('Logout error:', error);
+    alert('Error logging out: ' + error.message);
+    if (typeof window.isLoggingOut !== 'undefined') {
+      window.isLoggingOut = false;
+    }
+  }
+}
+
+console.log('✓ Auth handler functions defined and ready');
+
+// Initialize tab navigation when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('🔧 Setting up tab navigation...');
+
+  const tabButtons = document.querySelectorAll('.tab-btn');
+  console.log('Found', tabButtons.length, 'tab buttons');
+
+  tabButtons.forEach(btn => {
+    btn.addEventListener('click', function() {
+      console.log('Tab clicked:', btn.dataset.tab);
+
+      // Remove active class from all buttons
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+
+      // Add active class to clicked button
+      btn.classList.add('active');
+
+      // Update state if it exists
+      if (window.state) {
+        window.state.activeTab = btn.dataset.tab;
+      }
+
+      // Hide all tab contents
+      document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.add('hidden');
+      });
+
+      // Show selected tab content
+      const targetTab = document.getElementById(`${btn.dataset.tab}-tab`);
+      if (targetTab) {
+        targetTab.classList.remove('hidden');
+        console.log('Showing tab:', btn.dataset.tab);
+      } else {
+        console.error('Tab content not found:', btn.dataset.tab);
+      }
+
+      // Trigger render if it exists
+      if (typeof window.render === 'function') {
+        window.render();
+      }
+    });
+  });
+
+  console.log('✓ Tab navigation setup complete');
+
+  // Setup vendor navigation
+  console.log('🔧 Setting up vendor navigation...');
+
+  const vendorButtons = document.querySelectorAll('.vendor-btn');
+  console.log('Found', vendorButtons.length, 'vendor buttons');
+
+  vendorButtons.forEach(btn => {
+    btn.addEventListener('click', function() {
+      console.log('Vendor clicked:', btn.dataset.vendor);
+
+      // Remove active class from all vendor buttons
+      document.querySelectorAll('.vendor-btn').forEach(b => b.classList.remove('active'));
+
+      // Add active class to clicked button
+      btn.classList.add('active');
+
+      // Update state if it exists
+      if (window.state) {
+        window.state.selectedVendor = btn.dataset.vendor;
+        console.log('Updated state.selectedVendor to:', window.state.selectedVendor);
+      }
+
+      // Trigger render if it exists
+      if (typeof window.render === 'function') {
+        window.render();
+      }
+    });
+  });
+
+  console.log('✓ Vendor navigation setup complete');
+});
+
+// Also try to set up tabs immediately (in case DOMContentLoaded already fired)
+setTimeout(function() {
+  if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    console.log('🔧 DOM ready, setting up tab navigation immediately...');
+
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    if (tabButtons.length > 0) {
+      console.log('Found', tabButtons.length, 'tab buttons');
+
+      tabButtons.forEach(btn => {
+        // Remove any existing listeners by cloning
+        const newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+
+        newBtn.addEventListener('click', function() {
+          console.log('Tab clicked:', newBtn.dataset.tab);
+
+          document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+          newBtn.classList.add('active');
+
+          if (window.state) {
+            window.state.activeTab = newBtn.dataset.tab;
+          }
+
+          document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.add('hidden');
+          });
+
+          const targetTab = document.getElementById(`${newBtn.dataset.tab}-tab`);
+          if (targetTab) {
+            targetTab.classList.remove('hidden');
+          }
+
+          if (typeof window.render === 'function') {
+            window.render();
+          }
+        });
+      });
+
+      console.log('✓ Tab navigation attached immediately');
+    }
+
+    // Also setup vendor buttons immediately
+    const vendorButtons = document.querySelectorAll('.vendor-btn');
+    if (vendorButtons.length > 0) {
+      console.log('Found', vendorButtons.length, 'vendor buttons');
+
+      vendorButtons.forEach(btn => {
+        // Remove any existing listeners by cloning
+        const newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+
+        newBtn.addEventListener('click', function() {
+          console.log('Vendor clicked:', newBtn.dataset.vendor);
+
+          document.querySelectorAll('.vendor-btn').forEach(b => b.classList.remove('active'));
+          newBtn.classList.add('active');
+
+          if (window.state) {
+            window.state.selectedVendor = newBtn.dataset.vendor;
+            console.log('Updated state.selectedVendor to:', window.state.selectedVendor);
+          }
+
+          if (typeof window.render === 'function') {
+            window.render();
+          }
+        });
+      });
+
+      console.log('✓ Vendor navigation attached immediately');
+    }
+  }
+}, 100);
+</script>
+
 <!-- Main App Container (shown when logged in) -->
 <div id="appContainer" style="display: none;">
 <!-- Database Connection Status -->
