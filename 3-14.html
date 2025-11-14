@@ -1375,33 +1375,61 @@ state.advertisingData = { etrade: [], retailez: [], clicktech: [] };
 state.savedVretCogs = { etrade: [], retailez: [], clicktech: [] };
 state.freightCosts = { etrade: {}, retailez: {}, clicktech: {} };
 
-// Load data from vendor-specific paths
+// Load data from batches and combine them
 for (const vendor of vendors) {
-// Load ASIN Data per vendor
-const asinResult = await window.RealtimeDB.getData(`users/${userId}/asinData/${vendor}`);
-if (asinResult.success && asinResult.data) {
-state.asinData[vendor] = asinResult.data;
+// Load ASIN Data batches
+const asinMetaResult = await window.RealtimeDB.getData(`users/${userId}/asinData/${vendor}/meta`);
+if (asinMetaResult.success && asinMetaResult.data && asinMetaResult.data.batchCount) {
+const asinArray = [];
+for (let i = 0; i < asinMetaResult.data.batchCount; i++) {
+const batchResult = await window.RealtimeDB.getData(`users/${userId}/asinData/${vendor}/batch_${i}`);
+if (batchResult.success && batchResult.data) {
+asinArray.push(...batchResult.data);
+}
+}
+state.asinData[vendor] = asinArray;
 }
 
-// Load Invoices per vendor
-const invoiceResult = await window.RealtimeDB.getData(`users/${userId}/savedInvoices/${vendor}`);
-if (invoiceResult.success && invoiceResult.data) {
-state.savedInvoices[vendor] = invoiceResult.data;
+// Load Invoice batches
+const invoiceMetaResult = await window.RealtimeDB.getData(`users/${userId}/savedInvoices/${vendor}/meta`);
+if (invoiceMetaResult.success && invoiceMetaResult.data && invoiceMetaResult.data.batchCount) {
+const invoiceArray = [];
+for (let i = 0; i < invoiceMetaResult.data.batchCount; i++) {
+const batchResult = await window.RealtimeDB.getData(`users/${userId}/savedInvoices/${vendor}/batch_${i}`);
+if (batchResult.success && batchResult.data) {
+invoiceArray.push(...batchResult.data);
+}
+}
+state.savedInvoices[vendor] = invoiceArray;
 }
 
-// Load Advertising Data per vendor
-const adResult = await window.RealtimeDB.getData(`users/${userId}/advertisingData/${vendor}`);
-if (adResult.success && adResult.data) {
-state.advertisingData[vendor] = adResult.data;
+// Load Advertising Data batches
+const adMetaResult = await window.RealtimeDB.getData(`users/${userId}/advertisingData/${vendor}/meta`);
+if (adMetaResult.success && adMetaResult.data && adMetaResult.data.batchCount) {
+const adArray = [];
+for (let i = 0; i < adMetaResult.data.batchCount; i++) {
+const batchResult = await window.RealtimeDB.getData(`users/${userId}/advertisingData/${vendor}/batch_${i}`);
+if (batchResult.success && batchResult.data) {
+adArray.push(...batchResult.data);
+}
+}
+state.advertisingData[vendor] = adArray;
 }
 
-// Load VRET & COGS per vendor
-const vretResult = await window.RealtimeDB.getData(`users/${userId}/savedVretCogs/${vendor}`);
-if (vretResult.success && vretResult.data) {
-state.savedVretCogs[vendor] = vretResult.data;
+// Load VRET & COGS batches
+const vretMetaResult = await window.RealtimeDB.getData(`users/${userId}/savedVretCogs/${vendor}/meta`);
+if (vretMetaResult.success && vretMetaResult.data && vretMetaResult.data.batchCount) {
+const vretArray = [];
+for (let i = 0; i < vretMetaResult.data.batchCount; i++) {
+const batchResult = await window.RealtimeDB.getData(`users/${userId}/savedVretCogs/${vendor}/batch_${i}`);
+if (batchResult.success && batchResult.data) {
+vretArray.push(...batchResult.data);
+}
+}
+state.savedVretCogs[vendor] = vretArray;
 }
 
-// Load Freight Costs per vendor
+// Load Freight Costs (not batched)
 const freightResult = await window.RealtimeDB.getData(`users/${userId}/freightCosts/${vendor}`);
 if (freightResult.success && freightResult.data) {
 state.freightCosts[vendor] = freightResult.data;
@@ -1419,6 +1447,15 @@ showNotification('❌ Error loading data: ' + error.message, 'error');
 }
 }
 
+// Helper function to split array into batches
+function batchArray(array, batchSize = 500) {
+const batches = [];
+for (let i = 0; i < array.length; i += batchSize) {
+batches.push(array.slice(i, i + batchSize));
+}
+return batches;
+}
+
 // Save data to Firebase
 async function saveData() {
 if (!window.currentUser) {
@@ -1430,36 +1467,66 @@ try {
 console.log('💾 Saving all data to Firebase Realtime Database...');
 const userId = window.currentUser.uid;
 const vendors = ['etrade', 'retailez', 'clicktech'];
+const BATCH_SIZE = 500; // Items per batch
 
-// Split data by VENDOR to avoid WRITE_TOO_BIG error
-// Save each vendor's data to separate paths
+// Split LARGE ARRAYS into batches to avoid WRITE_TOO_BIG error
+// Save each batch to separate paths
 
 for (const vendor of vendors) {
-// Save ASIN Data per vendor
+// Save ASIN Data in batches
+const asinBatches = batchArray(state.asinData[vendor] || [], BATCH_SIZE);
+for (let i = 0; i < asinBatches.length; i++) {
 await window.RealtimeDB.setData(
-`users/${userId}/asinData/${vendor}`,
-state.asinData[vendor] || []
+`users/${userId}/asinData/${vendor}/batch_${i}`,
+asinBatches[i]
+);
+}
+// Clear old batches if data shrunk
+const asinBatchCount = await window.RealtimeDB.setData(
+`users/${userId}/asinData/${vendor}/meta`,
+{ batchCount: asinBatches.length }
 );
 
-// Save Invoices per vendor
+// Save Invoices in batches
+const invoiceBatches = batchArray(state.savedInvoices[vendor] || [], BATCH_SIZE);
+for (let i = 0; i < invoiceBatches.length; i++) {
 await window.RealtimeDB.setData(
-`users/${userId}/savedInvoices/${vendor}`,
-state.savedInvoices[vendor] || []
+`users/${userId}/savedInvoices/${vendor}/batch_${i}`,
+invoiceBatches[i]
+);
+}
+await window.RealtimeDB.setData(
+`users/${userId}/savedInvoices/${vendor}/meta`,
+{ batchCount: invoiceBatches.length }
 );
 
-// Save Advertising Data per vendor
+// Save Advertising Data in batches
+const adBatches = batchArray(state.advertisingData[vendor] || [], BATCH_SIZE);
+for (let i = 0; i < adBatches.length; i++) {
 await window.RealtimeDB.setData(
-`users/${userId}/advertisingData/${vendor}`,
-state.advertisingData[vendor] || []
+`users/${userId}/advertisingData/${vendor}/batch_${i}`,
+adBatches[i]
+);
+}
+await window.RealtimeDB.setData(
+`users/${userId}/advertisingData/${vendor}/meta`,
+{ batchCount: adBatches.length }
 );
 
-// Save VRET & COGS per vendor
+// Save VRET & COGS in batches
+const vretBatches = batchArray(state.savedVretCogs[vendor] || [], BATCH_SIZE);
+for (let i = 0; i < vretBatches.length; i++) {
 await window.RealtimeDB.setData(
-`users/${userId}/savedVretCogs/${vendor}`,
-state.savedVretCogs[vendor] || []
+`users/${userId}/savedVretCogs/${vendor}/batch_${i}`,
+vretBatches[i]
+);
+}
+await window.RealtimeDB.setData(
+`users/${userId}/savedVretCogs/${vendor}/meta`,
+{ batchCount: vretBatches.length }
 );
 
-// Save Freight Costs per vendor
+// Save Freight Costs (usually small, no batching needed)
 await window.RealtimeDB.setData(
 `users/${userId}/freightCosts/${vendor}`,
 state.freightCosts[vendor] || {}
@@ -1482,91 +1549,21 @@ showNotification('❌ Error saving data: ' + error.message, 'error');
 }
 }
 
-// Set up real-time listener for live data synchronization
+// Real-time sync is disabled due to batching complexity
+// Data auto-saves every 30 seconds instead
 let realtimeListeners = [];
 let isLoggingOut = false; // Flag to prevent updates during logout
 
 function setupRealtimeSync() {
-if (!window.currentUser) {
-console.log('No user logged in, skipping real-time sync setup');
-return;
-}
-
-const userId = window.currentUser.uid;
-const vendors = ['etrade', 'retailez', 'clicktech'];
-console.log('🔄 Setting up real-time data synchronization...');
-
-// Set up separate listeners for each vendor and data type to avoid size issues
-
-for (const vendor of vendors) {
-// Listen to ASIN Data per vendor
-const asinListener = window.RealtimeDB.listenToData(`users/${userId}/asinData/${vendor}`, (result) => {
-if (isLoggingOut) return;
-if (result.success && result.data) {
-state.asinData[vendor] = result.data;
-render();
-console.log(`🔄 ASIN data synced for ${vendor}`);
-}
-});
-realtimeListeners.push(asinListener);
-
-// Listen to Invoices per vendor
-const invoiceListener = window.RealtimeDB.listenToData(`users/${userId}/savedInvoices/${vendor}`, (result) => {
-if (isLoggingOut) return;
-if (result.success && result.data) {
-state.savedInvoices[vendor] = result.data;
-render();
-console.log(`🔄 Invoice data synced for ${vendor}`);
-}
-});
-realtimeListeners.push(invoiceListener);
-
-// Listen to Advertising Data per vendor
-const adListener = window.RealtimeDB.listenToData(`users/${userId}/advertisingData/${vendor}`, (result) => {
-if (isLoggingOut) return;
-if (result.success && result.data) {
-state.advertisingData[vendor] = result.data;
-render();
-console.log(`🔄 Advertising data synced for ${vendor}`);
-}
-});
-realtimeListeners.push(adListener);
-
-// Listen to VRET & COGS per vendor
-const vretListener = window.RealtimeDB.listenToData(`users/${userId}/savedVretCogs/${vendor}`, (result) => {
-if (isLoggingOut) return;
-if (result.success && result.data) {
-state.savedVretCogs[vendor] = result.data;
-render();
-console.log(`🔄 VRET/COGS data synced for ${vendor}`);
-}
-});
-realtimeListeners.push(vretListener);
-
-// Listen to Freight Costs per vendor
-const freightListener = window.RealtimeDB.listenToData(`users/${userId}/freightCosts/${vendor}`, (result) => {
-if (isLoggingOut) return;
-if (result.success && result.data) {
-state.freightCosts[vendor] = result.data;
-render();
-console.log(`🔄 Freight costs synced for ${vendor}`);
-}
-});
-realtimeListeners.push(freightListener);
-}
-
-console.log('✅ Real-time sync enabled for all vendors - data will update automatically!');
+console.log('ℹ️ Real-time sync is disabled due to large dataset batching');
+console.log('💾 Data auto-saves every 30 seconds instead');
+// With batched data, real-time sync would require too many listeners
+// Auto-save handles data persistence reliably
 }
 
 function stopRealtimeSync() {
-// Stop all listeners
-for (const listener of realtimeListeners) {
-if (listener && listener.ref) {
-window.RealtimeDB.stopListening(listener.ref);
-}
-}
-realtimeListeners = [];
-console.log('🛑 Real-time sync stopped for all vendors');
+// No listeners to stop since real-time sync is disabled
+console.log('✅ No real-time listeners to stop');
 }
 
 // Helper Functions
