@@ -1385,6 +1385,157 @@ async function handleLogout() {
 }
 
 console.log('✓ Auth handler functions defined and ready');
+
+// Initialize tab navigation when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('🔧 Setting up tab navigation...');
+
+  const tabButtons = document.querySelectorAll('.tab-btn');
+  console.log('Found', tabButtons.length, 'tab buttons');
+
+  tabButtons.forEach(btn => {
+    btn.addEventListener('click', function() {
+      console.log('Tab clicked:', btn.dataset.tab);
+
+      // Remove active class from all buttons
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+
+      // Add active class to clicked button
+      btn.classList.add('active');
+
+      // Update state if it exists
+      if (window.state) {
+        window.state.activeTab = btn.dataset.tab;
+      }
+
+      // Hide all tab contents
+      document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.add('hidden');
+      });
+
+      // Show selected tab content
+      const targetTab = document.getElementById(`${btn.dataset.tab}-tab`);
+      if (targetTab) {
+        targetTab.classList.remove('hidden');
+        console.log('Showing tab:', btn.dataset.tab);
+      } else {
+        console.error('Tab content not found:', btn.dataset.tab);
+      }
+
+      // Trigger render if it exists
+      if (typeof window.render === 'function') {
+        window.render();
+      }
+    });
+  });
+
+  console.log('✓ Tab navigation setup complete');
+
+  // Setup vendor navigation
+  console.log('🔧 Setting up vendor navigation...');
+
+  const vendorButtons = document.querySelectorAll('.vendor-btn');
+  console.log('Found', vendorButtons.length, 'vendor buttons');
+
+  vendorButtons.forEach(btn => {
+    btn.addEventListener('click', function() {
+      console.log('Vendor clicked:', btn.dataset.vendor);
+
+      // Remove active class from all vendor buttons
+      document.querySelectorAll('.vendor-btn').forEach(b => b.classList.remove('active'));
+
+      // Add active class to clicked button
+      btn.classList.add('active');
+
+      // Update state if it exists
+      if (window.state) {
+        window.state.selectedVendor = btn.dataset.vendor;
+        console.log('Updated state.selectedVendor to:', window.state.selectedVendor);
+      }
+
+      // Trigger render if it exists
+      if (typeof window.render === 'function') {
+        window.render();
+      }
+    });
+  });
+
+  console.log('✓ Vendor navigation setup complete');
+});
+
+// Also try to set up tabs immediately (in case DOMContentLoaded already fired)
+setTimeout(function() {
+  if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    console.log('🔧 DOM ready, setting up tab navigation immediately...');
+
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    if (tabButtons.length > 0) {
+      console.log('Found', tabButtons.length, 'tab buttons');
+
+      tabButtons.forEach(btn => {
+        // Remove any existing listeners by cloning
+        const newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+
+        newBtn.addEventListener('click', function() {
+          console.log('Tab clicked:', newBtn.dataset.tab);
+
+          document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+          newBtn.classList.add('active');
+
+          if (window.state) {
+            window.state.activeTab = newBtn.dataset.tab;
+          }
+
+          document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.add('hidden');
+          });
+
+          const targetTab = document.getElementById(`${newBtn.dataset.tab}-tab`);
+          if (targetTab) {
+            targetTab.classList.remove('hidden');
+          }
+
+          if (typeof window.render === 'function') {
+            window.render();
+          }
+        });
+      });
+
+      console.log('✓ Tab navigation attached immediately');
+    }
+
+    // Also setup vendor buttons immediately
+    const vendorButtons = document.querySelectorAll('.vendor-btn');
+    if (vendorButtons.length > 0) {
+      console.log('Found', vendorButtons.length, 'vendor buttons');
+
+      vendorButtons.forEach(btn => {
+        // Remove any existing listeners by cloning
+        const newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+
+        newBtn.addEventListener('click', function() {
+          console.log('Vendor clicked:', newBtn.dataset.vendor);
+
+          document.querySelectorAll('.vendor-btn').forEach(b => b.classList.remove('active'));
+          newBtn.classList.add('active');
+
+          if (window.state) {
+            window.state.selectedVendor = newBtn.dataset.vendor;
+            console.log('Updated state.selectedVendor to:', window.state.selectedVendor);
+          }
+
+          if (typeof window.render === 'function') {
+            window.render();
+          }
+        });
+      });
+
+      console.log('✓ Vendor navigation attached immediately');
+    }
+  }
+}, 100);
 </script>
 
 <!-- Main App Container (shown when logged in) -->
