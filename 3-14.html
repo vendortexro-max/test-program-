@@ -1494,9 +1494,15 @@ return batches;
 }
 
 // Save data to Firebase
-async function saveData() {
+async function saveData(forceSave = false) {
 if (!window.currentUser) {
 console.log('No user logged in, skipping save');
+return;
+}
+
+// Don't auto-save after logout (but allow forced saves during logout)
+if (isLoggingOut && !forceSave) {
+console.log('⏸️ Skipping auto-save after logout');
 return;
 }
 
@@ -1506,26 +1512,43 @@ const userId = window.currentUser.uid;
 const vendors = ['etrade', 'retailez', 'clicktech'];
 const BATCH_SIZE = 500; // Items per batch
 
+// Check if there's any data to save (prevent saving empty state)
+const hasData = vendors.some(vendor =>
+(state.asinData[vendor] && state.asinData[vendor].length > 0) ||
+(state.savedInvoices[vendor] && state.savedInvoices[vendor].length > 0) ||
+(state.advertisingData[vendor] && state.advertisingData[vendor].length > 0) ||
+(state.savedVretCogs[vendor] && state.savedVretCogs[vendor].length > 0) ||
+(state.freightCosts[vendor] && Object.keys(state.freightCosts[vendor]).length > 0)
+);
+
+if (!hasData) {
+console.log('⚠️ No data to save - skipping to prevent overwriting existing data');
+return;
+}
+
 // Split LARGE ARRAYS into batches to avoid WRITE_TOO_BIG error
 // Save each batch to separate paths
 
 for (const vendor of vendors) {
 // Save ASIN Data in batches
 const asinBatches = batchArray(state.asinData[vendor] || [], BATCH_SIZE);
+if (asinBatches.length > 0) {
 for (let i = 0; i < asinBatches.length; i++) {
 await window.RealtimeDB.setData(
 `users/${userId}/asinData/${vendor}/batch_${i}`,
 asinBatches[i]
 );
 }
-// Clear old batches if data shrunk
-const asinBatchCount = await window.RealtimeDB.setData(
+await window.RealtimeDB.setData(
 `users/${userId}/asinData/${vendor}/meta`,
 { batchCount: asinBatches.length }
 );
+console.log(`✅ Saved ${asinBatches.length} ASIN batches for ${vendor}`);
+}
 
 // Save Invoices in batches
 const invoiceBatches = batchArray(state.savedInvoices[vendor] || [], BATCH_SIZE);
+if (invoiceBatches.length > 0) {
 for (let i = 0; i < invoiceBatches.length; i++) {
 await window.RealtimeDB.setData(
 `users/${userId}/savedInvoices/${vendor}/batch_${i}`,
@@ -1536,9 +1559,12 @@ await window.RealtimeDB.setData(
 `users/${userId}/savedInvoices/${vendor}/meta`,
 { batchCount: invoiceBatches.length }
 );
+console.log(`✅ Saved ${invoiceBatches.length} invoice batches for ${vendor}`);
+}
 
 // Save Advertising Data in batches
 const adBatches = batchArray(state.advertisingData[vendor] || [], BATCH_SIZE);
+if (adBatches.length > 0) {
 for (let i = 0; i < adBatches.length; i++) {
 await window.RealtimeDB.setData(
 `users/${userId}/advertisingData/${vendor}/batch_${i}`,
@@ -1549,9 +1575,12 @@ await window.RealtimeDB.setData(
 `users/${userId}/advertisingData/${vendor}/meta`,
 { batchCount: adBatches.length }
 );
+console.log(`✅ Saved ${adBatches.length} advertising batches for ${vendor}`);
+}
 
 // Save VRET & COGS in batches
 const vretBatches = batchArray(state.savedVretCogs[vendor] || [], BATCH_SIZE);
+if (vretBatches.length > 0) {
 for (let i = 0; i < vretBatches.length; i++) {
 await window.RealtimeDB.setData(
 `users/${userId}/savedVretCogs/${vendor}/batch_${i}`,
@@ -1562,14 +1591,17 @@ await window.RealtimeDB.setData(
 `users/${userId}/savedVretCogs/${vendor}/meta`,
 { batchCount: vretBatches.length }
 );
+console.log(`✅ Saved ${vretBatches.length} VRET/COGS batches for ${vendor}`);
+}
 
 // Save Freight Costs (usually small, no batching needed)
+if (state.freightCosts[vendor] && Object.keys(state.freightCosts[vendor]).length > 0) {
 await window.RealtimeDB.setData(
 `users/${userId}/freightCosts/${vendor}`,
-state.freightCosts[vendor] || {}
+state.freightCosts[vendor]
 );
-
-console.log(`✅ All data saved for ${vendor}`);
+console.log(`✅ Saved freight costs for ${vendor}`);
+}
 }
 
 // Save metadata (last updated timestamp)
@@ -5599,7 +5631,7 @@ isLoggingOut = true;
 // Step 1: Save data before logout (to ensure no data loss)
 if (window.currentUser && typeof saveData === 'function') {
 console.log('💾 Saving data before logout...');
-await saveData();
+await saveData(true); // Force save even though isLoggingOut is true
 // Wait a moment to ensure save completes
 await new Promise(resolve => setTimeout(resolve, 1000));
 }
@@ -5972,6 +6004,11 @@ console.log('✓ Firebase authentication ready');
       // User is signed in
       console.log('🔐 User is signed in:', user.email);
       window.currentUser = user;
+
+      // Reset logout flag when logging in
+      if (typeof isLoggingOut !== 'undefined') {
+        isLoggingOut = false;
+      }
 
       // Show app container, hide auth container
       const authContainer = document.getElementById('authContainer');
