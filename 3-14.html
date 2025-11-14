@@ -5558,12 +5558,14 @@ document.getElementById('loginForm').style.display = 'block';
 document.getElementById('signupForm').style.display = 'none';
 clearAuthMessage();
 }
+window.showLogin = showLogin;
 
 function showSignup() {
 document.getElementById('loginForm').style.display = 'none';
 document.getElementById('signupForm').style.display = 'block';
 clearAuthMessage();
 }
+window.showSignup = showSignup;
 
 // Display Messages
 function showAuthMessage(message, type) {
@@ -5603,6 +5605,8 @@ console.error('Login error:', error);
 showAuthMessage(error.message || 'Login failed', 'error');
 }
 }
+// Explicitly attach to window object for onclick handlers
+window.handleLogin = handleLogin;
 
 // Handle Signup
 async function handleSignup() {
@@ -5640,6 +5644,8 @@ console.error('Signup error:', error);
 showAuthMessage(error.message || 'Signup failed', 'error');
 }
 }
+// Explicitly attach to window object for onclick handlers
+window.handleSignup = handleSignup;
 
 // Handle Logout
 async function handleLogout() {
@@ -5697,6 +5703,8 @@ console.error('Logout error:', error);
 alert('Error logging out: ' + error.message);
 }
 }
+// Explicitly attach to window object for onclick handlers
+window.handleLogout = handleLogout;
 
 // Note: Auth state is handled by Firebase onAuthStateChanged listener
 // No need for manual checkAuthState() - Firebase handles it automatically
