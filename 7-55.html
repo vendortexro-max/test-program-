@@ -1673,6 +1673,10 @@ clicktech: []
 deleteConfirm: null
 };
 
+// Expose state to window for access from event listeners
+window.state = state;
+console.log('✓ State exposed to window');
+
 // Load data from Firebase
 async function loadData() {
 if (!window.currentUser) {
@@ -1817,6 +1821,10 @@ showNotification('❌ Error loading data: ' + error.message, 'error');
 }
 }
 
+// Expose loadData to window for access from auth handlers
+window.loadData = loadData;
+console.log('✓ loadData function exposed to window');
+
 // Helper function to split array into batches
 function batchArray(array, batchSize = 500) {
 const batches = [];
@@ -1954,10 +1962,18 @@ showNotification('❌ Error saving data: ' + error.message, 'error');
 }
 }
 
+// Expose saveData to window for access from auth handlers
+window.saveData = saveData;
+console.log('✓ saveData function exposed to window');
+
 // Real-time sync is disabled due to batching complexity
 // Data auto-saves every 30 seconds instead
 let realtimeListeners = [];
 let isLoggingOut = false; // Flag to prevent updates during logout
+
+// Expose critical functions and variables to window
+window.isLoggingOut = isLoggingOut;
+console.log('✓ isLoggingOut exposed to window');
 
 function setupRealtimeSync() {
 console.log('ℹ️ Real-time sync is disabled due to large dataset batching');
@@ -1965,11 +1981,15 @@ console.log('💾 Data auto-saves every 30 seconds instead');
 // With batched data, real-time sync would require too many listeners
 // Auto-save handles data persistence reliably
 }
+window.setupRealtimeSync = setupRealtimeSync;
 
 function stopRealtimeSync() {
 // No listeners to stop since real-time sync is disabled
 console.log('✅ No real-time listeners to stop');
 }
+window.stopRealtimeSync = stopRealtimeSync;
+
+console.log('✓ Realtime sync functions exposed to window');
 
 // Helper Functions
 // Parse date string in multiple formats (YYYY-MM-DD, DD-MM-YYYY, etc.)
@@ -4563,9 +4583,14 @@ break;
 }
 }
 
-// Initialize
-loadData();
-render();
+// Expose render function to window for access from event listeners
+window.render = render;
+console.log('✓ Render function exposed to window');
+
+// Initialize - DON'T call loadData() and render() here!
+// They will be called after user logs in via Firebase onAuthStateChanged listener
+// Calling them here causes blank pages because no user is authenticated yet
+console.log('✓ Application functions ready - waiting for authentication');
 
 // Auto-save DISABLED to prevent performance issues and accidental empty saves
 // Data will save on logout or when you click Save button manually
@@ -6375,8 +6400,8 @@ console.log('✓ Firebase authentication ready');
       window.currentUser = user;
 
       // Reset logout flag when logging in
-      if (typeof isLoggingOut !== 'undefined') {
-        isLoggingOut = false;
+      if (typeof window.isLoggingOut !== 'undefined') {
+        window.isLoggingOut = false;
       }
 
       // Show app container, hide auth container
@@ -6389,18 +6414,24 @@ console.log('✓ Firebase authentication ready');
       if (userEmailSpan) userEmailSpan.textContent = user.email;
 
       // Load user data from Firebase
-      if (typeof loadData === 'function') {
-        await loadData();
+      if (typeof window.loadData === 'function') {
+        console.log('📥 Calling loadData...');
+        await window.loadData();
+      } else {
+        console.error('❌ window.loadData is not a function!');
       }
 
       // Set up real-time data synchronization
-      if (typeof setupRealtimeSync === 'function') {
-        setupRealtimeSync();
+      if (typeof window.setupRealtimeSync === 'function') {
+        window.setupRealtimeSync();
       }
 
       // Render the app
-      if (typeof render === 'function') {
-        render();
+      if (typeof window.render === 'function') {
+        console.log('🎨 Calling render...');
+        window.render();
+      } else {
+        console.error('❌ window.render is not a function!');
       }
     } else {
       // User is signed out
@@ -6408,8 +6439,8 @@ console.log('✓ Firebase authentication ready');
       window.currentUser = null;
 
       // Stop real-time sync
-      if (typeof stopRealtimeSync === 'function') {
-        stopRealtimeSync();
+      if (typeof window.stopRealtimeSync === 'function') {
+        window.stopRealtimeSync();
       }
 
       // Show auth container, hide app container
