@@ -1380,14 +1380,18 @@ for (const vendor of vendors) {
 // Load ASIN Data - try new batched format first, then fall back to old format
 const asinMetaResult = await window.RealtimeDB.getData(`users/${userId}/asinData/${vendor}/meta`);
 if (asinMetaResult.success && asinMetaResult.data && asinMetaResult.data.batchCount) {
-// New batched format
-const asinArray = [];
+// New batched format - load all batches in parallel
+const batchPromises = [];
 for (let i = 0; i < asinMetaResult.data.batchCount; i++) {
-const batchResult = await window.RealtimeDB.getData(`users/${userId}/asinData/${vendor}/batch_${i}`);
-if (batchResult.success && batchResult.data) {
-asinArray.push(...batchResult.data);
+batchPromises.push(window.RealtimeDB.getData(`users/${userId}/asinData/${vendor}/batch_${i}`));
 }
+const batchResults = await Promise.all(batchPromises);
+const asinArray = [];
+batchResults.forEach(result => {
+if (result.success && result.data) {
+asinArray.push(...result.data);
 }
+});
 state.asinData[vendor] = asinArray;
 console.log(`✅ Loaded ${asinArray.length} ASIN items for ${vendor} (batched)`);
 } else {
@@ -1402,14 +1406,18 @@ console.log(`✅ Loaded ${oldResult.data.length} ASIN items for ${vendor} (old f
 // Load Invoices - try new batched format first, then fall back to old format
 const invoiceMetaResult = await window.RealtimeDB.getData(`users/${userId}/savedInvoices/${vendor}/meta`);
 if (invoiceMetaResult.success && invoiceMetaResult.data && invoiceMetaResult.data.batchCount) {
-// New batched format
-const invoiceArray = [];
+// New batched format - load all batches in parallel
+const batchPromises = [];
 for (let i = 0; i < invoiceMetaResult.data.batchCount; i++) {
-const batchResult = await window.RealtimeDB.getData(`users/${userId}/savedInvoices/${vendor}/batch_${i}`);
-if (batchResult.success && batchResult.data) {
-invoiceArray.push(...batchResult.data);
+batchPromises.push(window.RealtimeDB.getData(`users/${userId}/savedInvoices/${vendor}/batch_${i}`));
 }
+const batchResults = await Promise.all(batchPromises);
+const invoiceArray = [];
+batchResults.forEach(result => {
+if (result.success && result.data) {
+invoiceArray.push(...result.data);
 }
+});
 state.savedInvoices[vendor] = invoiceArray;
 console.log(`✅ Loaded ${invoiceArray.length} invoices for ${vendor} (batched)`);
 } else {
@@ -1424,14 +1432,18 @@ console.log(`✅ Loaded ${oldResult.data.length} invoices for ${vendor} (old for
 // Load Advertising Data - try new batched format first, then fall back to old format
 const adMetaResult = await window.RealtimeDB.getData(`users/${userId}/advertisingData/${vendor}/meta`);
 if (adMetaResult.success && adMetaResult.data && adMetaResult.data.batchCount) {
-// New batched format
-const adArray = [];
+// New batched format - load all batches in parallel
+const batchPromises = [];
 for (let i = 0; i < adMetaResult.data.batchCount; i++) {
-const batchResult = await window.RealtimeDB.getData(`users/${userId}/advertisingData/${vendor}/batch_${i}`);
-if (batchResult.success && batchResult.data) {
-adArray.push(...batchResult.data);
+batchPromises.push(window.RealtimeDB.getData(`users/${userId}/advertisingData/${vendor}/batch_${i}`));
 }
+const batchResults = await Promise.all(batchPromises);
+const adArray = [];
+batchResults.forEach(result => {
+if (result.success && result.data) {
+adArray.push(...result.data);
 }
+});
 state.advertisingData[vendor] = adArray;
 console.log(`✅ Loaded ${adArray.length} advertising items for ${vendor} (batched)`);
 } else {
@@ -1446,14 +1458,18 @@ console.log(`✅ Loaded ${oldResult.data.length} advertising items for ${vendor}
 // Load VRET & COGS - try new batched format first, then fall back to old format
 const vretMetaResult = await window.RealtimeDB.getData(`users/${userId}/savedVretCogs/${vendor}/meta`);
 if (vretMetaResult.success && vretMetaResult.data && vretMetaResult.data.batchCount) {
-// New batched format
-const vretArray = [];
+// New batched format - load all batches in parallel
+const batchPromises = [];
 for (let i = 0; i < vretMetaResult.data.batchCount; i++) {
-const batchResult = await window.RealtimeDB.getData(`users/${userId}/savedVretCogs/${vendor}/batch_${i}`);
-if (batchResult.success && batchResult.data) {
-vretArray.push(...batchResult.data);
+batchPromises.push(window.RealtimeDB.getData(`users/${userId}/savedVretCogs/${vendor}/batch_${i}`));
 }
+const batchResults = await Promise.all(batchPromises);
+const vretArray = [];
+batchResults.forEach(result => {
+if (result.success && result.data) {
+vretArray.push(...result.data);
 }
+});
 state.savedVretCogs[vendor] = vretArray;
 console.log(`✅ Loaded ${vretArray.length} VRET/COGS items for ${vendor} (batched)`);
 } else {
@@ -1530,68 +1546,71 @@ return;
 // Save each batch to separate paths
 
 for (const vendor of vendors) {
-// Save ASIN Data in batches
+const savePromises = [];
+
+// Save ASIN Data in batches (parallel)
 const asinBatches = batchArray(state.asinData[vendor] || [], BATCH_SIZE);
 if (asinBatches.length > 0) {
 for (let i = 0; i < asinBatches.length; i++) {
-await window.RealtimeDB.setData(
+savePromises.push(window.RealtimeDB.setData(
 `users/${userId}/asinData/${vendor}/batch_${i}`,
 asinBatches[i]
-);
+));
 }
-await window.RealtimeDB.setData(
+savePromises.push(window.RealtimeDB.setData(
 `users/${userId}/asinData/${vendor}/meta`,
 { batchCount: asinBatches.length }
-);
-console.log(`✅ Saved ${asinBatches.length} ASIN batches for ${vendor}`);
+));
 }
 
-// Save Invoices in batches
+// Save Invoices in batches (parallel)
 const invoiceBatches = batchArray(state.savedInvoices[vendor] || [], BATCH_SIZE);
 if (invoiceBatches.length > 0) {
 for (let i = 0; i < invoiceBatches.length; i++) {
-await window.RealtimeDB.setData(
+savePromises.push(window.RealtimeDB.setData(
 `users/${userId}/savedInvoices/${vendor}/batch_${i}`,
 invoiceBatches[i]
-);
+));
 }
-await window.RealtimeDB.setData(
+savePromises.push(window.RealtimeDB.setData(
 `users/${userId}/savedInvoices/${vendor}/meta`,
 { batchCount: invoiceBatches.length }
-);
-console.log(`✅ Saved ${invoiceBatches.length} invoice batches for ${vendor}`);
+));
 }
 
-// Save Advertising Data in batches
+// Save Advertising Data in batches (parallel)
 const adBatches = batchArray(state.advertisingData[vendor] || [], BATCH_SIZE);
 if (adBatches.length > 0) {
 for (let i = 0; i < adBatches.length; i++) {
-await window.RealtimeDB.setData(
+savePromises.push(window.RealtimeDB.setData(
 `users/${userId}/advertisingData/${vendor}/batch_${i}`,
 adBatches[i]
-);
+));
 }
-await window.RealtimeDB.setData(
+savePromises.push(window.RealtimeDB.setData(
 `users/${userId}/advertisingData/${vendor}/meta`,
 { batchCount: adBatches.length }
-);
-console.log(`✅ Saved ${adBatches.length} advertising batches for ${vendor}`);
+));
 }
 
-// Save VRET & COGS in batches
+// Save VRET & COGS in batches (parallel)
 const vretBatches = batchArray(state.savedVretCogs[vendor] || [], BATCH_SIZE);
 if (vretBatches.length > 0) {
 for (let i = 0; i < vretBatches.length; i++) {
-await window.RealtimeDB.setData(
+savePromises.push(window.RealtimeDB.setData(
 `users/${userId}/savedVretCogs/${vendor}/batch_${i}`,
 vretBatches[i]
-);
+));
 }
-await window.RealtimeDB.setData(
+savePromises.push(window.RealtimeDB.setData(
 `users/${userId}/savedVretCogs/${vendor}/meta`,
 { batchCount: vretBatches.length }
-);
-console.log(`✅ Saved ${vretBatches.length} VRET/COGS batches for ${vendor}`);
+));
+}
+
+// Wait for all saves for this vendor to complete
+await Promise.all(savePromises);
+console.log(`✅ All data saved for ${vendor} (${savePromises.length} writes)`);
 }
 
 // Save Freight Costs (usually small, no batching needed)
@@ -4231,8 +4250,10 @@ break;
 loadData();
 render();
 
-// Auto-save every 30 seconds
-setInterval(saveData, 30000);
+// Auto-save DISABLED to prevent performance issues and accidental empty saves
+// Data will save on logout or when you click Save button manually
+// Uncomment below to re-enable auto-save (not recommended with large datasets)
+// setInterval(saveData, 30000);
 
 // ENHANCED FUNCTIONS FOR DAILY/WEEKLY/MONTHLY ANALYTICS WITH AD SPEND
 
