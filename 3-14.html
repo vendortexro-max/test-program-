@@ -5582,8 +5582,13 @@ msgDiv.textContent = '';
 
 // Handle Login
 async function handleLogin() {
+console.log('🔍 handleLogin called');
+console.log('🔍 window.FirebaseAuth exists?', !!window.FirebaseAuth);
+
 const email = document.getElementById('loginEmail').value.trim();
 const password = document.getElementById('loginPassword').value;
+
+console.log('🔍 Email:', email, 'Password length:', password.length);
 
 if (!email || !password) {
 showAuthMessage('Please enter email and password', 'error');
@@ -5593,7 +5598,11 @@ return;
 showAuthMessage('Logging in...', 'info');
 
 try {
+if (!window.FirebaseAuth) {
+throw new Error('Firebase not initialized yet. Please wait a moment and try again.');
+}
 const result = await window.FirebaseAuth.signIn(email, password);
+console.log('🔍 Login result:', result);
 if (result.success) {
 showAuthMessage('✅ Login successful! Loading your data...', 'success');
 // Auth state listener will handle UI updates
@@ -5607,12 +5616,18 @@ showAuthMessage(error.message || 'Login failed', 'error');
 }
 // Explicitly attach to window object for onclick handlers
 window.handleLogin = handleLogin;
+console.log('✓ handleLogin attached to window');
 
 // Handle Signup
 async function handleSignup() {
+console.log('🔍 handleSignup called');
+console.log('🔍 window.FirebaseAuth exists?', !!window.FirebaseAuth);
+
 const email = document.getElementById('signupEmail').value.trim();
 const password = document.getElementById('signupPassword').value;
 const confirm = document.getElementById('signupConfirm').value;
+
+console.log('🔍 Email:', email, 'Password length:', password.length, 'Confirm length:', confirm.length);
 
 if (!email || !password || !confirm) {
 showAuthMessage('Please fill in all fields', 'error');
@@ -5632,7 +5647,11 @@ return;
 showAuthMessage('Creating account...', 'info');
 
 try {
+if (!window.FirebaseAuth) {
+throw new Error('Firebase not initialized yet. Please wait a moment and try again.');
+}
 const result = await window.FirebaseAuth.signUp(email, password);
+console.log('🔍 Signup result:', result);
 if (result.success) {
 showAuthMessage('✅ Account created successfully! Logging you in...', 'success');
 // Auth state listener will handle UI updates
@@ -5646,6 +5665,7 @@ showAuthMessage(error.message || 'Signup failed', 'error');
 }
 // Explicitly attach to window object for onclick handlers
 window.handleSignup = handleSignup;
+console.log('✓ handleSignup attached to window');
 
 // Handle Logout
 async function handleLogout() {
@@ -5987,6 +6007,7 @@ console.log('✓ Firebase authentication ready');
   window.FirebaseAuth = {
     // Sign up new user
     async signUp(email, password) {
+      console.log('📞 FirebaseAuth.signUp called');
       try {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         console.log('✅ User created:', userCredential.user.email);
@@ -5999,6 +6020,7 @@ console.log('✓ Firebase authentication ready');
 
     // Sign in existing user
     async signIn(email, password) {
+      console.log('📞 FirebaseAuth.signIn called');
       try {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         console.log('✅ User signed in:', userCredential.user.email);
@@ -6026,6 +6048,7 @@ console.log('✓ Firebase authentication ready');
       return auth.currentUser;
     }
   };
+  console.log('✓ window.FirebaseAuth initialized and attached');
 
   // Listen for auth state changes
   onAuthStateChanged(auth, async (user) => {
