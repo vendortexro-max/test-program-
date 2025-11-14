@@ -1636,6 +1636,22 @@ Logout
 <input type="file" id="backup-file-input" accept=".json" style="display: none;">
 
 <script>
+// ============================================================
+// MAIN APPLICATION SCRIPT - START MARKER
+// ============================================================
+console.log('🚀 MAIN SCRIPT STARTED - Line 1638');
+window.MAIN_SCRIPT_STARTED = true;
+window.MAIN_SCRIPT_VERSION = '8-45-v1';
+
+// Global error handler to catch any script errors
+window.addEventListener('error', function(e) {
+  console.error('🔥 GLOBAL ERROR DETECTED:', e.message, 'at', e.filename, 'line', e.lineno);
+  console.error('🔥 Error object:', e.error);
+});
+
+// Wrap entire script in try-catch
+try {
+
 // State Management
 const state = {
 selectedVendor: 'etrade',
@@ -6083,6 +6099,16 @@ window.handleLogout = handleLogout;
 // No need for manual checkAuthState() - Firebase handles it automatically
 
 console.log('✓ Firebase authentication ready');
+console.log('🏁 MAIN SCRIPT COMPLETED SUCCESSFULLY');
+window.MAIN_SCRIPT_COMPLETED = true;
+
+} catch (error) {
+  console.error('💥 FATAL ERROR IN MAIN SCRIPT:', error);
+  console.error('💥 Error message:', error.message);
+  console.error('💥 Error stack:', error.stack);
+  window.MAIN_SCRIPT_ERROR = error;
+  alert('CRITICAL ERROR: Main script failed to load.\n\nError: ' + error.message + '\n\nPlease check the browser console (F12) for details.');
+}
 </script>
 
 <!-- Firebase Configuration -->
@@ -6426,6 +6452,10 @@ console.log('✓ Firebase authentication ready');
 
       // Wait for main script functions to be ready (max 10 seconds)
       console.log('⏳ Waiting for main script functions to be ready...');
+      console.log('🔍 Main script started?', window.MAIN_SCRIPT_STARTED);
+      console.log('🔍 Main script completed?', window.MAIN_SCRIPT_COMPLETED);
+      console.log('🔍 Main script error?', window.MAIN_SCRIPT_ERROR);
+
       let attempts = 0;
       const maxAttempts = 100; // 100 attempts * 100ms = 10 seconds max wait
 
@@ -6442,7 +6472,24 @@ console.log('✓ Firebase authentication ready');
         console.error('❌ window.loadData:', typeof window.loadData);
         console.error('❌ window.render:', typeof window.render);
         console.error('❌ window.state:', typeof window.state);
-        alert('Error: Application functions failed to load. Please refresh the page.');
+        console.error('❌ MAIN_SCRIPT_STARTED:', window.MAIN_SCRIPT_STARTED);
+        console.error('❌ MAIN_SCRIPT_COMPLETED:', window.MAIN_SCRIPT_COMPLETED);
+        console.error('❌ MAIN_SCRIPT_ERROR:', window.MAIN_SCRIPT_ERROR);
+
+        let errorMsg = 'ERROR: Application failed to load.\n\n';
+
+        if (!window.MAIN_SCRIPT_STARTED) {
+          errorMsg += 'Main script never started - check for HTML parsing errors.\n';
+        } else if (window.MAIN_SCRIPT_ERROR) {
+          errorMsg += 'Main script crashed with error:\n' + window.MAIN_SCRIPT_ERROR.message + '\n\nCheck console for details.';
+        } else if (!window.MAIN_SCRIPT_COMPLETED) {
+          errorMsg += 'Main script started but did not complete - check console for errors.\n';
+        } else {
+          errorMsg += 'Main script completed but functions are not defined.\n';
+        }
+
+        errorMsg += '\n\nPlease refresh the page or clear browser cache.';
+        alert(errorMsg);
         return;
       }
 
