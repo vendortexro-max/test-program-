@@ -1221,6 +1221,172 @@ display: block;
 </div>
 </div>
 
+<script>
+// Define auth functions immediately so onclick handlers can find them
+// These will work once Firebase is initialized by the module script below
+
+function showAuthMessage(message, type) {
+  const msgDiv = document.getElementById('authMessage');
+  if (msgDiv) {
+    msgDiv.textContent = message;
+    msgDiv.className = `auth-message ${type}`;
+  }
+}
+
+function showLogin() {
+  const loginForm = document.getElementById('loginForm');
+  const signupForm = document.getElementById('signupForm');
+  if (loginForm) loginForm.style.display = 'block';
+  if (signupForm) signupForm.style.display = 'none';
+  showAuthMessage('', '');
+}
+
+function showSignup() {
+  const loginForm = document.getElementById('loginForm');
+  const signupForm = document.getElementById('signupForm');
+  if (loginForm) loginForm.style.display = 'none';
+  if (signupForm) signupForm.style.display = 'block';
+  showAuthMessage('', '');
+}
+
+async function handleLogin() {
+  console.log('🔍 handleLogin called');
+
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+
+  if (!email || !password) {
+    showAuthMessage('Please enter email and password', 'error');
+    return;
+  }
+
+  showAuthMessage('Logging in...', 'info');
+
+  try {
+    // Wait for Firebase to be initialized
+    let attempts = 0;
+    while (!window.FirebaseAuth && attempts < 50) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      attempts++;
+    }
+
+    if (!window.FirebaseAuth) {
+      throw new Error('Firebase not initialized. Please refresh the page.');
+    }
+
+    const result = await window.FirebaseAuth.signIn(email, password);
+    console.log('🔍 Login result:', result);
+
+    if (result.success) {
+      showAuthMessage('✅ Login successful! Loading your data...', 'success');
+    } else {
+      showAuthMessage(result.error || 'Login failed', 'error');
+    }
+  } catch (error) {
+    console.error('Login error:', error);
+    showAuthMessage(error.message || 'Login failed', 'error');
+  }
+}
+
+async function handleSignup() {
+  console.log('🔍 handleSignup called');
+
+  const email = document.getElementById('signupEmail').value.trim();
+  const password = document.getElementById('signupPassword').value;
+  const confirm = document.getElementById('signupConfirm').value;
+
+  if (!email || !password || !confirm) {
+    showAuthMessage('Please fill in all fields', 'error');
+    return;
+  }
+
+  if (password.length < 6) {
+    showAuthMessage('Password must be at least 6 characters', 'error');
+    return;
+  }
+
+  if (password !== confirm) {
+    showAuthMessage('Passwords do not match', 'error');
+    return;
+  }
+
+  showAuthMessage('Creating account...', 'info');
+
+  try {
+    // Wait for Firebase to be initialized
+    let attempts = 0;
+    while (!window.FirebaseAuth && attempts < 50) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      attempts++;
+    }
+
+    if (!window.FirebaseAuth) {
+      throw new Error('Firebase not initialized. Please refresh the page.');
+    }
+
+    const result = await window.FirebaseAuth.signUp(email, password);
+    console.log('🔍 Signup result:', result);
+
+    if (result.success) {
+      showAuthMessage('✅ Account created successfully! Logging you in...', 'success');
+    } else {
+      showAuthMessage(result.error || 'Signup failed', 'error');
+    }
+  } catch (error) {
+    console.error('Signup error:', error);
+    showAuthMessage(error.message || 'Signup failed', 'error');
+  }
+}
+
+async function handleLogout() {
+  try {
+    console.log('🔄 Logging out...');
+
+    if (typeof window.isLoggingOut !== 'undefined') {
+      window.isLoggingOut = true;
+    }
+
+    // Save data before logout
+    if (window.currentUser && typeof window.saveData === 'function') {
+      console.log('💾 Saving data before logout...');
+      await window.saveData(true);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+
+    // Sign out from Firebase
+    if (window.FirebaseAuth) {
+      const result = await window.FirebaseAuth.signOut();
+      if (result.success) {
+        // Clear storage
+        try {
+          localStorage.clear();
+          sessionStorage.clear();
+          console.log('🧹 Browser cache and storage cleared');
+        } catch (e) {
+          console.warn('⚠️ Could not clear storage:', e);
+        }
+
+        console.log('✅ Logged out successfully');
+      } else {
+        alert('Error logging out: ' + result.error);
+      }
+    }
+
+    if (typeof window.isLoggingOut !== 'undefined') {
+      window.isLoggingOut = false;
+    }
+  } catch (error) {
+    console.error('Logout error:', error);
+    alert('Error logging out: ' + error.message);
+    if (typeof window.isLoggingOut !== 'undefined') {
+      window.isLoggingOut = false;
+    }
+  }
+}
+
+console.log('✓ Auth handler functions defined and ready');
+</script>
+
 <!-- Main App Container (shown when logged in) -->
 <div id="appContainer" style="display: none;">
 <!-- Database Connection Status -->
