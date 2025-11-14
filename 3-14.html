@@ -1377,9 +1377,10 @@ state.freightCosts = { etrade: {}, retailez: {}, clicktech: {} };
 
 // Load data from batches and combine them
 for (const vendor of vendors) {
-// Load ASIN Data batches
+// Load ASIN Data - try new batched format first, then fall back to old format
 const asinMetaResult = await window.RealtimeDB.getData(`users/${userId}/asinData/${vendor}/meta`);
 if (asinMetaResult.success && asinMetaResult.data && asinMetaResult.data.batchCount) {
+// New batched format
 const asinArray = [];
 for (let i = 0; i < asinMetaResult.data.batchCount; i++) {
 const batchResult = await window.RealtimeDB.getData(`users/${userId}/asinData/${vendor}/batch_${i}`);
@@ -1388,11 +1389,20 @@ asinArray.push(...batchResult.data);
 }
 }
 state.asinData[vendor] = asinArray;
+console.log(`✅ Loaded ${asinArray.length} ASIN items for ${vendor} (batched)`);
+} else {
+// Try old format (non-batched)
+const oldResult = await window.RealtimeDB.getData(`users/${userId}/asinData/${vendor}`);
+if (oldResult.success && oldResult.data && Array.isArray(oldResult.data)) {
+state.asinData[vendor] = oldResult.data;
+console.log(`✅ Loaded ${oldResult.data.length} ASIN items for ${vendor} (old format)`);
+}
 }
 
-// Load Invoice batches
+// Load Invoices - try new batched format first, then fall back to old format
 const invoiceMetaResult = await window.RealtimeDB.getData(`users/${userId}/savedInvoices/${vendor}/meta`);
 if (invoiceMetaResult.success && invoiceMetaResult.data && invoiceMetaResult.data.batchCount) {
+// New batched format
 const invoiceArray = [];
 for (let i = 0; i < invoiceMetaResult.data.batchCount; i++) {
 const batchResult = await window.RealtimeDB.getData(`users/${userId}/savedInvoices/${vendor}/batch_${i}`);
@@ -1401,11 +1411,20 @@ invoiceArray.push(...batchResult.data);
 }
 }
 state.savedInvoices[vendor] = invoiceArray;
+console.log(`✅ Loaded ${invoiceArray.length} invoices for ${vendor} (batched)`);
+} else {
+// Try old format (non-batched)
+const oldResult = await window.RealtimeDB.getData(`users/${userId}/savedInvoices/${vendor}`);
+if (oldResult.success && oldResult.data && Array.isArray(oldResult.data)) {
+state.savedInvoices[vendor] = oldResult.data;
+console.log(`✅ Loaded ${oldResult.data.length} invoices for ${vendor} (old format)`);
+}
 }
 
-// Load Advertising Data batches
+// Load Advertising Data - try new batched format first, then fall back to old format
 const adMetaResult = await window.RealtimeDB.getData(`users/${userId}/advertisingData/${vendor}/meta`);
 if (adMetaResult.success && adMetaResult.data && adMetaResult.data.batchCount) {
+// New batched format
 const adArray = [];
 for (let i = 0; i < adMetaResult.data.batchCount; i++) {
 const batchResult = await window.RealtimeDB.getData(`users/${userId}/advertisingData/${vendor}/batch_${i}`);
@@ -1414,11 +1433,20 @@ adArray.push(...batchResult.data);
 }
 }
 state.advertisingData[vendor] = adArray;
+console.log(`✅ Loaded ${adArray.length} advertising items for ${vendor} (batched)`);
+} else {
+// Try old format (non-batched)
+const oldResult = await window.RealtimeDB.getData(`users/${userId}/advertisingData/${vendor}`);
+if (oldResult.success && oldResult.data && Array.isArray(oldResult.data)) {
+state.advertisingData[vendor] = oldResult.data;
+console.log(`✅ Loaded ${oldResult.data.length} advertising items for ${vendor} (old format)`);
+}
 }
 
-// Load VRET & COGS batches
+// Load VRET & COGS - try new batched format first, then fall back to old format
 const vretMetaResult = await window.RealtimeDB.getData(`users/${userId}/savedVretCogs/${vendor}/meta`);
 if (vretMetaResult.success && vretMetaResult.data && vretMetaResult.data.batchCount) {
+// New batched format
 const vretArray = [];
 for (let i = 0; i < vretMetaResult.data.batchCount; i++) {
 const batchResult = await window.RealtimeDB.getData(`users/${userId}/savedVretCogs/${vendor}/batch_${i}`);
@@ -1427,19 +1455,28 @@ vretArray.push(...batchResult.data);
 }
 }
 state.savedVretCogs[vendor] = vretArray;
+console.log(`✅ Loaded ${vretArray.length} VRET/COGS items for ${vendor} (batched)`);
+} else {
+// Try old format (non-batched)
+const oldResult = await window.RealtimeDB.getData(`users/${userId}/savedVretCogs/${vendor}`);
+if (oldResult.success && oldResult.data && Array.isArray(oldResult.data)) {
+state.savedVretCogs[vendor] = oldResult.data;
+console.log(`✅ Loaded ${oldResult.data.length} VRET/COGS items for ${vendor} (old format)`);
+}
 }
 
 // Load Freight Costs (not batched)
 const freightResult = await window.RealtimeDB.getData(`users/${userId}/freightCosts/${vendor}`);
 if (freightResult.success && freightResult.data) {
 state.freightCosts[vendor] = freightResult.data;
+console.log(`✅ Loaded freight costs for ${vendor}`);
 }
 
-console.log(`✅ Data loaded for ${vendor}`);
+console.log(`✅ All data loaded for ${vendor}`);
 }
 
 console.log('✅ All data loaded from Firebase Realtime Database');
-console.log('📊 Data will sync in real-time across all devices');
+showNotification('✅ Data loaded successfully!', 'success');
 render();
 } catch (error) {
 console.error('Error loading data from Firebase:', error);
